@@ -13,7 +13,8 @@ typesafe-i18n provides fully type-safe translations with autocompletion. Transla
 ## Setup
 
 ### Directory Structure
-```
+
+```text
 src/i18n/
   i18n-types.ts       # Auto-generated types
   i18n-util.ts         # Auto-generated utilities
@@ -23,6 +24,7 @@ src/i18n/
 ```
 
 ### Configuration (`.typesafe-i18n.json`)
+
 ```json
 {
   "baseLocale": "en",
@@ -32,6 +34,7 @@ src/i18n/
 ```
 
 ### Run the Generator
+
 ```bash
 npx typesafe-i18n    # Watches base locale and regenerates types
 ```
@@ -88,6 +91,7 @@ return (
 ```
 
 ### Provider Setup
+
 ```tsx
 <I18nProvider locale="en">
   <Router />
@@ -96,12 +100,12 @@ return (
 
 ## Parameterized Translations
 
-| Syntax | Example | Description |
-|---|---|---|
-| `{name:string}` | `'Hello {name:string}'` | Named string parameter |
-| `{count:number}` | `'{count:number} items'` | Named number parameter |
-| `{{singular\|plural}}` | `'{count} {{item\|items}}'` | Plural forms |
-| `{0:string}` | `'Click {0:string}'` | Positional parameter |
+| Syntax                   | Example                      | Description              |
+| ------------------------ | ---------------------------- | ------------------------ |
+| `{name:string}`          | `'Hello {name:string}'`      | Named string parameter   |
+| `{count:number}`         | `'{count:number} items'`     | Named number parameter   |
+| `{{singular\|plural}}`   | `'{count} {{item\|items}}'`  | Plural forms             |
+| `{0:string}`             | `'Click {0:string}'`         | Positional parameter     |
 
 ## Namespace Organization
 
@@ -120,11 +124,18 @@ const en = {
 
 ## Anti-patterns
 
-| Anti-pattern | Why it's wrong |
-|---|---|
-| **Hardcoded strings** | Every user-visible string must go through `LL()`. |
-| **Missing translations** | `Translation` type catches these at compile time -- run `tsc --noEmit` in CI. |
-| **Interpolating HTML** | Do not embed HTML in translation strings. Use component composition. |
-| **Dynamic key access** | `LL()[dynamicKey]()` bypasses type safety. Use conditional rendering. |
-| **Forgetting to load locale** | Call `loadLocale()` before rendering. |
-| **Over-splitting namespaces** | Too many small namespaces add overhead. Group by feature, not component. |
+| Anti-pattern                   | Why it's wrong                                                                  |
+| ------------------------------ | ------------------------------------------------------------------------------- |
+| **Hardcoded strings**          | Every user-visible string must go through `LL()`.                               |
+| **Missing translations**       | `Translation` type catches these at compile time -- run `tsc --noEmit` in CI.   |
+| **Interpolating HTML**         | Do not embed HTML in translation strings. Use component composition.            |
+| **Dynamic key access**         | `LL()[dynamicKey]()` bypasses type safety. Use conditional rendering.           |
+| **Forgetting to load locale**  | Call `loadLocale()` before rendering.                                           |
+| **Over-splitting namespaces**  | Too many small namespaces add overhead. Group by feature, not component.        |
+
+## Best Practices Reference
+
+| Topic                                    | Guide                                                                           |
+| ---------------------------------------- | ------------------------------------------------------------------------------- |
+| `satisfies` pattern used in translations | [The satisfies Operator](../best-practices/typescript/satisfies-operator.md)    |
+| i18n provider and context pattern        | [Context & Global State](../best-practices/solidjs/context-and-global-state.md) |

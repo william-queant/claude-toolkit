@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.8 (2026-04-04)
+
+- docs: cross-reference best practices and fix markdown lint warnings
+
 ## 0.1.7 (2026-04-04)
 
 - docs: add SolidJS best practices collection

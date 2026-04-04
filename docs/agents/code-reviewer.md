@@ -22,7 +22,7 @@ A senior code reviewer agent that thoroughly reviews code changes, providing act
 ### Critical Issues
 
 | Category | Checks |
-|---|---|
+| --- | --- |
 | **Logic Correctness** | Off-by-one errors, inverted conditions, unhandled edge cases, race conditions, incorrect state transitions, dead code |
 | **Error Handling** | Swallowed errors, missing context in error messages, leaked resources, unhandled crashes, missing error boundaries |
 | **Security** | SQL/XSS/command injection, missing auth, secrets in code, CORS issues, missing rate limiting |
@@ -30,7 +30,7 @@ A senior code reviewer agent that thoroughly reviews code changes, providing act
 ### Warnings
 
 | Category | Checks |
-|---|---|
+| --- | --- |
 | **Type Safety** | `any` usage, unsafe casts, missing null checks, implicit coercions, overly broad generics |
 | **Performance** | Unnecessary re-renders, N+1 queries, missing pagination, sync-when-should-be-async, memory leaks |
 | **Testing** | New behavior without tests, implementation-detail tests, missing edge cases, flaky patterns |
@@ -38,12 +38,12 @@ A senior code reviewer agent that thoroughly reviews code changes, providing act
 ### Suggestions
 
 | Category | Checks |
-|---|---|
+| --- | --- |
 | **Naming and Readability** | Misleading names, abbreviations, functions doing too much, deep nesting, comments describing "what" instead of "why" |
 
 ## Output Format
 
-```
+```markdown
 ## Code Review
 
 **Reviewed:** {files or PR description}
@@ -55,6 +55,17 @@ A senior code reviewer agent that thoroughly reviews code changes, providing act
 ### Looks Good
 ### Summary
 ```
+
+## Best Practices Reference
+
+Stack-aware review informed by these guides:
+
+| Review Area | Guide |
+| --- | --- |
+| `any` usage, type safety patterns | [any & unknown](../best-practices/typescript/any-and-unknown.md) |
+| `type` vs `interface` conventions | [Type vs Interface](../best-practices/typescript/type-vs-interface.md) |
+| SolidJS-specific mistakes (destructuring, effects) | [SolidJS Anti-Patterns](../best-practices/solidjs/anti-patterns.md) |
+| Props reactivity issues | [SolidJS Props Patterns](../best-practices/solidjs/props-patterns.md) |
 
 ## Principles
 

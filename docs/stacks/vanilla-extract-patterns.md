@@ -30,6 +30,7 @@ export const button = style({
 ```
 
 Compose styles by passing an array:
+
 ```ts
 export const primaryButton = style([button, { background: 'blue', color: 'white' }]);
 ```
@@ -98,10 +99,17 @@ Requires `@vanilla-extract/sprinkles`. Creates constrained atomic CSS classes wi
 
 ## Anti-patterns
 
-| Anti-pattern | Why it's wrong |
-|---|---|
-| **Inline styles** | Defeats the purpose. Use `style()` or `sprinkles()`. |
-| **Runtime CSS** | vanilla-extract is build-time only. |
-| **Overusing globalStyle** | Prefer scoped `style()`. Global styles create implicit coupling. |
-| **Non-`.css.ts` files** | Style definitions in `.ts` files will not be processed. |
-| **String-based theme values** | Use the `vars` object for type-safe references. |
+| Anti-pattern                  | Why it's wrong                                                   |
+| ----------------------------- | ---------------------------------------------------------------- |
+| **Inline styles**             | Defeats the purpose. Use `style()` or `sprinkles()`.             |
+| **Runtime CSS**               | vanilla-extract is build-time only.                              |
+| **Overusing globalStyle**     | Prefer scoped `style()`. Global styles create implicit coupling. |
+| **Non-`.css.ts` files**       | Style definitions in `.ts` files will not be processed.          |
+| **String-based theme values** | Use the `vars` object for type-safe references.                  |
+
+## Best Practices Reference
+
+| Topic                                     | Guide                                                                        |
+| ----------------------------------------- | ---------------------------------------------------------------------------- |
+| `type` vs `interface` for theme contracts | [Type vs Interface](../best-practices/typescript/type-vs-interface.md)       |
+| `satisfies` for config validation         | [The satisfies Operator](../best-practices/typescript/satisfies-operator.md) |

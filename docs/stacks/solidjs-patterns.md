@@ -91,3 +91,20 @@ setState("user", "settings", "theme", "light");
 | **Array index as key in For** | `<For>` is keyed by reference automatically. |
 | **Reading signals outside reactive context** | Captures the value once at component top level. |
 | **Forgetting to call signals** | `count` is a getter function, `count()` is the value. |
+
+## Best Practices Reference
+
+For deeper guidance on SolidJS patterns (sourced from official docs and Ryan Carniato):
+
+| Topic | Guide |
+|---|---|
+| How fine-grained reactivity works internally | [Reactivity Model](../best-practices/solidjs/reactivity-model.md) |
+| Signal vs memo, derived values, when to use what | [Signals & State](../best-practices/solidjs/signals-and-state.md) |
+| `produce`, `reconcile`, path syntax for nested state | [Stores & Nested State](../best-practices/solidjs/stores-and-nested-state.md) |
+| `mergeProps`, `splitProps`, `children` helper | [Props Patterns](../best-practices/solidjs/props-patterns.md) |
+| When NOT to use effects, `onMount`, `onCleanup` | [Effects & Lifecycle](../best-practices/solidjs/effects-and-lifecycle.md) |
+| `Show`, `For`, `Switch`/`Match`, `Suspense` details | [Control Flow](../best-practices/solidjs/control-flow.md) |
+| `createResource`, `createAsync`, optimistic updates | [Data Fetching](../best-practices/solidjs/data-fetching.md) |
+| Full catalog of common SolidJS mistakes | [Anti-Patterns](../best-practices/solidjs/anti-patterns.md) |
+
+See the full collection: [SolidJS Best Practices](../best-practices/solidjs/README.md)

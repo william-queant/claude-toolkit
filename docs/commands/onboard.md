@@ -8,7 +8,7 @@
 
 ## Usage
 
-```
+```bash
 /onboard [area]
 ```
 
@@ -55,6 +55,15 @@ If no area is specified, starts from the project root.
 ### Questions / Gaps
 - {Things that are unclear or undocumented}
 ```
+
+## Best Practices Reference
+
+Conventions to look for during onboarding:
+
+| Topic | Guide |
+| --- | --- |
+| TypeScript conventions and patterns | [TypeScript Best Practices](../best-practices/typescript/README.md) |
+| SolidJS conventions and patterns | [SolidJS Best Practices](../best-practices/solidjs/README.md) |
 
 ## Notes
 

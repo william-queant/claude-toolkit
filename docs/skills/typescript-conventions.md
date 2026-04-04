@@ -114,6 +114,22 @@ function findById<T extends { id: string }>(items: T[], id: string): T | undefin
 | **`Object`, `Function`, `{}`** | Almost never what you want. Use specific interfaces or function signatures. |
 | **`@ts-ignore`** | Suppressing errors without tracking means the error will be forgotten. |
 
+## Best Practices Reference
+
+For deeper guidance on the patterns referenced above (sourced from Matt Pocock / Total TypeScript):
+
+| Topic | Guide |
+|---|---|
+| Default to `type`, use `interface` for `extends` | [Type vs Interface](../best-practices/typescript/type-vs-interface.md) |
+| Why enums are problematic, `as const` alternative | [Enums & Alternatives](../best-practices/typescript/enums-alternatives.md) |
+| When `any` is acceptable (two exceptions) | [any & unknown](../best-practices/typescript/any-and-unknown.md) |
+| State modeling with discriminated unions | [Discriminated Unions](../best-practices/typescript/discriminated-unions.md) |
+| Three patterns for generics | [Generics Patterns](../best-practices/typescript/generics-patterns.md) |
+| Recommended `tsconfig.json` settings | [TSConfig Cheat Sheet](../best-practices/typescript/tsconfig-cheat-sheet.md) |
+| Branded types, assertion functions, type predicates | [Essential Patterns](../best-practices/typescript/essential-patterns.md) |
+
+See the full collection: [TypeScript Best Practices](../best-practices/typescript/README.md)
+
 ## Trigger Conditions
 
 - **Keywords:** `typescript`, `type`, `interface`, `generic`

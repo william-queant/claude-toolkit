@@ -8,7 +8,7 @@
 
 ## Usage
 
-```
+```bash
 /pr-review [pr-number]
 ```
 
@@ -19,42 +19,49 @@ If no PR number is provided, diffs the current branch against the base branch.
 The command evaluates all changed files against these criteria:
 
 ### Logic Correctness
+
 - Conditionals and branches correct, no off-by-one errors
 - Edge cases handled (empty inputs, null values, boundary conditions)
 - Control flow matches intended behavior
 - No unreachable code paths
 
 ### Type Safety
+
 - Precise types (no `any`, no unsafe casts, no overly broad unions)
 - Type narrowing used correctly before accessing properties
 - Generic constraints appropriate
 - Return types explicit where needed
 
 ### Error Handling
+
 - Errors caught and handled meaningfully (not swallowed)
 - Error messages provide enough context for debugging
 - Error boundaries or fallbacks in place where needed
 - Cleanup logic (finally blocks, defer) correct
 
 ### Test Coverage
+
 - New behaviors covered by tests
 - Tests focus on behavior, not implementation details
 - Edge cases and error paths tested
 - Test descriptions clear and descriptive
 
 ### Performance
+
 - No unnecessary re-renders, recomputations, or allocations
 - No N+1 query patterns or missing pagination
 - No missing memoization for expensive operations
 - No potential memory leaks
 
 ### Security
+
 - No injection vulnerabilities (SQL, XSS, command injection)
 - User inputs validated and sanitized
 - Auth checks present on protected operations
 - Secrets and sensitive data properly handled
 
 ### Code Style
+
 - Naming follows project conventions
 - Code readable without excessive comments
 - Abstractions at the right level
@@ -62,7 +69,7 @@ The command evaluates all changed files against these criteria:
 
 ## Output Format
 
-```
+```markdown
 ## PR Review: {title}
 
 **Branch:** {branch} -> {base}
@@ -75,6 +82,17 @@ The command evaluates all changed files against these criteria:
 ### Positive Notes
 ### Summary
 ```
+
+## Best Practices Reference
+
+Review criteria informed by these guides:
+
+| Review Area | Guide |
+| --- | --- |
+| Type safety: `any` usage, unsafe casts | [any & unknown](../best-practices/typescript/any-and-unknown.md) |
+| State modeling with unions | [Discriminated Unions](../best-practices/typescript/discriminated-unions.md) |
+| SolidJS-specific issues (props, reactivity) | [SolidJS Anti-Patterns](../best-practices/solidjs/anti-patterns.md) |
+| Performance: re-renders, reactivity mistakes | [SolidJS Performance](../best-practices/solidjs/performance.md) |
 
 ## Notes
 
