@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.7 (2026-04-04)
+
+- docs: add SolidJS best practices collection
+
 ## 0.1.6 (2026-04-04)
 
 - docs: add Matt Pocock's TypeScript best practices collection
