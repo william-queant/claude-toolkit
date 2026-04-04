@@ -1,9 +1,31 @@
 #!/bin/sh
 
-# Guard against recursion when amending
+# Guard: recursion from our own amend
 [ -n "$SKIP_POST_COMMIT" ] && exit 0
 
-# Use node for cross-platform compatibility (no /tmp, date, tail, rm)
+# Guard: rebase in progress
+[ -d "$(git rev-parse --git-dir)/rebase-merge" ] && exit 0
+[ -d "$(git rev-parse --git-dir)/rebase-apply" ] && exit 0
+
+# Guard: cherry-pick in progress
+[ -f "$(git rev-parse --git-dir)/CHERRY_PICK_HEAD" ] && exit 0
+
+# Guard: merge commit (more than one parent)
+[ "$(git rev-list --parents -1 HEAD | wc -w)" -gt 2 ] && exit 0
+
+# Guard: amend detection — skip if user ran git commit --amend
+# Compare current HEAD tree with the reflog entry before it;
+# if the parent is the same, this is an amend of the previous commit
+PREV_HEAD=$(git rev-parse 'HEAD@{1}' 2>/dev/null)
+if [ -n "$PREV_HEAD" ]; then
+  PREV_PARENT=$(git rev-parse "$PREV_HEAD^" 2>/dev/null)
+  CURR_PARENT=$(git rev-parse "HEAD^" 2>/dev/null)
+  if [ "$PREV_PARENT" = "$CURR_PARENT" ] && [ "$PREV_HEAD" != "$(git rev-parse HEAD)" ]; then
+    exit 0
+  fi
+fi
+
+# All guards passed — this is a fresh commit
 MSG=$(git log -1 --pretty=%s)
 
 node -e "

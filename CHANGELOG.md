@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.5 (2026-04-04)
+
+- fix: guard post-commit hook against amend, rebase, cherry-pick, and merge
+
 ## 0.1.4 (2026-04-04)
 
 - refactor: namespace commands under ct/ and prefix agents with ct-
