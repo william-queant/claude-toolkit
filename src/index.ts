@@ -1,12 +1,12 @@
 export type {
-  ClaudeToolkitConfig,
-  StackName,
-  HookConfig,
-  GitConfig,
-  ProjectInfo,
-  StackPack,
-  ResolvedConfig,
-} from './types.js';
+	ClaudeToolkitConfig,
+	GitConfig,
+	HookConfig,
+	ProjectInfo,
+	ResolvedConfig,
+	StackName,
+	StackPack,
+} from "./types.js";
 
 /**
  * Define a claude-toolkit configuration with full type safety.
@@ -25,6 +25,6 @@ export type {
  * })
  * ```
  */
-export function defineConfig(config: import('./types.js').ClaudeToolkitConfig) {
-  return config;
+export function defineConfig(config: import("./types.js").ClaudeToolkitConfig) {
+	return config;
 }

@@ -1,26 +1,45 @@
 {
-  "name": "rust-wasm-patterns",
-  "description": "Rust WASM for Cloudflare Workers with worker-rs",
-  "defaultMappings": {
-    "worker": "rust-wasm-patterns",
-    "worker/src": "rust-wasm-patterns"
-  },
-  "fileExtensions": ["rs", "toml"],
-  "skillRules": {
-    "rust-wasm-patterns": {
-      "description": "Rust WASM patterns for Cloudflare Workers",
-      "priority": 8,
-      "triggers": {
-        "keywords": ["rust", "wasm", "worker", "cargo", "wasm-bindgen", "worker-rs", "wrangler"],
-        "keywordPatterns": ["\\brust\\b", "\\bwasm\\b", "\\bcargo\\b", "\\bworker\\b"],
-        "pathPatterns": ["**/*.rs", "**/Cargo.toml", "**/worker/**"],
-        "intentPatterns": [
-          "(?:create|build|add).*(?:endpoint|route|handler|worker)",
-          "(?:rust|wasm).*(?:function|module|binding)"
-        ],
-        "contentPatterns": ["worker::.*", "wasm_bindgen", "pub async fn", "Result<", "#\\[worker::"]
-      },
-      "relatedSkills": ["protobuf-contracts", "cloudflare-d1-kv"]
-    }
-  }
+	"name": "rust-wasm-patterns",
+	"description": "Rust WASM for Cloudflare Workers with worker-rs",
+	"defaultMappings": {
+		"worker": "rust-wasm-patterns",
+		"worker/src": "rust-wasm-patterns"
+	},
+	"fileExtensions": ["rs", "toml"],
+	"skillRules": {
+		"rust-wasm-patterns": {
+			"description": "Rust WASM patterns for Cloudflare Workers",
+			"priority": 8,
+			"triggers": {
+				"keywords": [
+					"rust",
+					"wasm",
+					"worker",
+					"cargo",
+					"wasm-bindgen",
+					"worker-rs",
+					"wrangler"
+				],
+				"keywordPatterns": [
+					"\\brust\\b",
+					"\\bwasm\\b",
+					"\\bcargo\\b",
+					"\\bworker\\b"
+				],
+				"pathPatterns": ["**/*.rs", "**/Cargo.toml", "**/worker/**"],
+				"intentPatterns": [
+					"(?:create|build|add).*(?:endpoint|route|handler|worker)",
+					"(?:rust|wasm).*(?:function|module|binding)"
+				],
+				"contentPatterns": [
+					"worker::.*",
+					"wasm_bindgen",
+					"pub async fn",
+					"Result<",
+					"#\\[worker::"
+				]
+			},
+			"relatedSkills": ["protobuf-contracts", "cloudflare-d1-kv"]
+		}
+	}
 }

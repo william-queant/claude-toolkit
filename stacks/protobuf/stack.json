@@ -1,25 +1,43 @@
 {
-  "name": "protobuf-contracts",
-  "description": "Protobuf contracts between frontend and backend",
-  "defaultMappings": {
-    "proto": "protobuf-contracts"
-  },
-  "fileExtensions": ["proto"],
-  "skillRules": {
-    "protobuf-contracts": {
-      "description": "Protocol Buffer definitions and code generation",
-      "priority": 8,
-      "triggers": {
-        "keywords": ["protobuf", "proto", "protocol buffer", "grpc", "prost", "protoc", "buf"],
-        "keywordPatterns": ["\\bproto\\b", "\\bprotobuf\\b", "\\bprost\\b", "\\bbuf\\b"],
-        "pathPatterns": ["**/*.proto", "**/proto/**", "**/*.pb.ts"],
-        "intentPatterns": [
-          "(?:define|create|add).*(?:message|service|rpc|contract)",
-          "(?:proto|protobuf).*(?:schema|type|definition)"
-        ],
-        "contentPatterns": ["syntax.*proto3", "message\\s+\\w+", "service\\s+\\w+", "rpc\\s+\\w+"]
-      },
-      "relatedSkills": ["rust-wasm-patterns"]
-    }
-  }
+	"name": "protobuf-contracts",
+	"description": "Protobuf contracts between frontend and backend",
+	"defaultMappings": {
+		"proto": "protobuf-contracts"
+	},
+	"fileExtensions": ["proto"],
+	"skillRules": {
+		"protobuf-contracts": {
+			"description": "Protocol Buffer definitions and code generation",
+			"priority": 8,
+			"triggers": {
+				"keywords": [
+					"protobuf",
+					"proto",
+					"protocol buffer",
+					"grpc",
+					"prost",
+					"protoc",
+					"buf"
+				],
+				"keywordPatterns": [
+					"\\bproto\\b",
+					"\\bprotobuf\\b",
+					"\\bprost\\b",
+					"\\bbuf\\b"
+				],
+				"pathPatterns": ["**/*.proto", "**/proto/**", "**/*.pb.ts"],
+				"intentPatterns": [
+					"(?:define|create|add).*(?:message|service|rpc|contract)",
+					"(?:proto|protobuf).*(?:schema|type|definition)"
+				],
+				"contentPatterns": [
+					"syntax.*proto3",
+					"message\\s+\\w+",
+					"service\\s+\\w+",
+					"rpc\\s+\\w+"
+				]
+			},
+			"relatedSkills": ["rust-wasm-patterns"]
+		}
+	}
 }

@@ -1,88 +1,144 @@
 {
-  "skills": {
-    "systematic-debugging": {
-      "description": "Four-phase debugging with root cause analysis",
-      "priority": 9,
-      "triggers": {
-        "keywords": ["bug", "debug", "fix", "error", "issue", "broken", "crash", "failing"],
-        "keywordPatterns": ["\\bbug\\b", "\\bfix\\b", "\\berror\\b", "\\bissue\\b", "doesn't work", "not working"],
-        "intentPatterns": [
-          "(?:fix|debug|resolve|investigate).*(?:bug|error|issue|problem)",
-          "(?:why).*(?:not working|broken|failing|crash)",
-          "(?:something).*(?:wrong|broken)"
-        ]
-      },
-      "excludePatterns": ["fix typo", "fix formatting", "fix lint"]
-    },
-    "testing-patterns": {
-      "description": "Test-driven development workflow and patterns",
-      "priority": 9,
-      "triggers": {
-        "keywords": ["test", "spec", "tdd", "mock", "factory", "vitest", "jest"],
-        "keywordPatterns": ["\\btest(?:s|ing)?\\b", "\\bspec\\b", "unit test"],
-        "pathPatterns": ["**/*.test.ts", "**/*.test.tsx", "**/*.spec.ts", "**/test-utils/**", "**/__mocks__/**"],
-        "intentPatterns": [
-          "(?:write|add|create|fix).*(?:test|spec)",
-          "(?:test|spec).*(?:for|of|the)",
-          "(?:red.green.refactor|tdd)"
-        ],
-        "contentPatterns": ["describe\\(", "it\\(", "expect\\(", "vi\\.mock", "jest\\.mock"]
-      },
-      "excludePatterns": ["e2e", "end-to-end"]
-    },
-    "typescript-conventions": {
-      "description": "TypeScript strict mode and conventions",
-      "priority": 5,
-      "triggers": {
-        "keywords": ["typescript", "type", "interface", "generic", "strict mode"],
-        "keywordPatterns": ["\\btype\\b", "\\binterface\\b", "\\bgeneric\\b"],
-        "pathPatterns": ["**/*.d.ts", "**/types/**", "**/types.ts"],
-        "intentPatterns": [
-          "(?:define|create).*(?:type|interface)",
-          "(?:type).*(?:error|issue)"
-        ],
-        "contentPatterns": ["interface ", "type ", ": unknown", "as const"]
-      },
-      "excludePatterns": ["issue type", "type of bug"]
-    },
-    "verification-before-completion": {
-      "description": "Evidence-based completion claims protocol",
-      "priority": 8,
-      "triggers": {
-        "keywords": ["verify", "check", "confirm", "done", "complete", "finished"],
-        "intentPatterns": [
-          "(?:is it|are we).*(?:done|complete|finished)",
-          "(?:verify|check|confirm).*(?:works|passes)"
-        ],
-        "contextPatterns": ["before claiming", "make sure", "double check"]
-      }
-    },
-    "github-actions": {
-      "description": "GitHub Actions CI/CD workflow patterns",
-      "priority": 6,
-      "triggers": {
-        "keywords": ["github action", "github workflow", "workflow", "ci/cd", "cicd", "pipeline"],
-        "keywordPatterns": ["github.action", "ci/?cd", "\\bworkflow\\b"],
-        "pathPatterns": [".github/workflows/**", ".github/**/*.yml"],
-        "intentPatterns": [
-          "(?:create|add|update).*(?:workflow|action|pipeline)",
-          "(?:ci|cd).*(?:pipeline|workflow)"
-        ],
-        "contentPatterns": ["runs-on:", "uses:", "steps:"]
-      }
-    },
-    "code-review": {
-      "description": "Handle code review feedback",
-      "priority": 4,
-      "triggers": {
-        "keywords": ["code review", "pr feedback", "review comment"],
-        "keywordPatterns": ["code.review", "pr.feedback", "review.comment"],
-        "intentPatterns": [
-          "(?:respond|address|handle).*(?:review|feedback|comment)",
-          "(?:reviewer).*(?:said|suggested|asked)"
-        ],
-        "contextPatterns": ["from the reviewer", "in the pr", "review feedback"]
-      }
-    }
-  }
+	"skills": {
+		"systematic-debugging": {
+			"description": "Four-phase debugging with root cause analysis",
+			"priority": 9,
+			"triggers": {
+				"keywords": [
+					"bug",
+					"debug",
+					"fix",
+					"error",
+					"issue",
+					"broken",
+					"crash",
+					"failing"
+				],
+				"keywordPatterns": [
+					"\\bbug\\b",
+					"\\bfix\\b",
+					"\\berror\\b",
+					"\\bissue\\b",
+					"doesn't work",
+					"not working"
+				],
+				"intentPatterns": [
+					"(?:fix|debug|resolve|investigate).*(?:bug|error|issue|problem)",
+					"(?:why).*(?:not working|broken|failing|crash)",
+					"(?:something).*(?:wrong|broken)"
+				]
+			},
+			"excludePatterns": ["fix typo", "fix formatting", "fix lint"]
+		},
+		"testing-patterns": {
+			"description": "Test-driven development workflow and patterns",
+			"priority": 9,
+			"triggers": {
+				"keywords": [
+					"test",
+					"spec",
+					"tdd",
+					"mock",
+					"factory",
+					"vitest",
+					"jest"
+				],
+				"keywordPatterns": ["\\btest(?:s|ing)?\\b", "\\bspec\\b", "unit test"],
+				"pathPatterns": [
+					"**/*.test.ts",
+					"**/*.test.tsx",
+					"**/*.spec.ts",
+					"**/test-utils/**",
+					"**/__mocks__/**"
+				],
+				"intentPatterns": [
+					"(?:write|add|create|fix).*(?:test|spec)",
+					"(?:test|spec).*(?:for|of|the)",
+					"(?:red.green.refactor|tdd)"
+				],
+				"contentPatterns": [
+					"describe\\(",
+					"it\\(",
+					"expect\\(",
+					"vi\\.mock",
+					"jest\\.mock"
+				]
+			},
+			"excludePatterns": ["e2e", "end-to-end"]
+		},
+		"typescript-conventions": {
+			"description": "TypeScript strict mode and conventions",
+			"priority": 5,
+			"triggers": {
+				"keywords": [
+					"typescript",
+					"type",
+					"interface",
+					"generic",
+					"strict mode"
+				],
+				"keywordPatterns": ["\\btype\\b", "\\binterface\\b", "\\bgeneric\\b"],
+				"pathPatterns": ["**/*.d.ts", "**/types/**", "**/types.ts"],
+				"intentPatterns": [
+					"(?:define|create).*(?:type|interface)",
+					"(?:type).*(?:error|issue)"
+				],
+				"contentPatterns": ["interface ", "type ", ": unknown", "as const"]
+			},
+			"excludePatterns": ["issue type", "type of bug"]
+		},
+		"verification-before-completion": {
+			"description": "Evidence-based completion claims protocol",
+			"priority": 8,
+			"triggers": {
+				"keywords": [
+					"verify",
+					"check",
+					"confirm",
+					"done",
+					"complete",
+					"finished"
+				],
+				"intentPatterns": [
+					"(?:is it|are we).*(?:done|complete|finished)",
+					"(?:verify|check|confirm).*(?:works|passes)"
+				],
+				"contextPatterns": ["before claiming", "make sure", "double check"]
+			}
+		},
+		"github-actions": {
+			"description": "GitHub Actions CI/CD workflow patterns",
+			"priority": 6,
+			"triggers": {
+				"keywords": [
+					"github action",
+					"github workflow",
+					"workflow",
+					"ci/cd",
+					"cicd",
+					"pipeline"
+				],
+				"keywordPatterns": ["github.action", "ci/?cd", "\\bworkflow\\b"],
+				"pathPatterns": [".github/workflows/**", ".github/**/*.yml"],
+				"intentPatterns": [
+					"(?:create|add|update).*(?:workflow|action|pipeline)",
+					"(?:ci|cd).*(?:pipeline|workflow)"
+				],
+				"contentPatterns": ["runs-on:", "uses:", "steps:"]
+			}
+		},
+		"code-review": {
+			"description": "Handle code review feedback",
+			"priority": 4,
+			"triggers": {
+				"keywords": ["code review", "pr feedback", "review comment"],
+				"keywordPatterns": ["code.review", "pr.feedback", "review.comment"],
+				"intentPatterns": [
+					"(?:respond|address|handle).*(?:review|feedback|comment)",
+					"(?:reviewer).*(?:said|suggested|asked)"
+				],
+				"contextPatterns": ["from the reviewer", "in the pr", "review feedback"]
+			}
+		}
+	}
 }

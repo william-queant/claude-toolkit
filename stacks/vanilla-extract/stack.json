@@ -1,26 +1,45 @@
 {
-  "name": "vanilla-extract-patterns",
-  "description": "Type-safe CSS with vanilla-extract, sprinkles, and recipes",
-  "defaultMappings": {
-    "src/styles": "vanilla-extract-patterns",
-    "src/theme": "vanilla-extract-patterns"
-  },
-  "fileExtensions": ["css.ts"],
-  "skillRules": {
-    "vanilla-extract-patterns": {
-      "description": "Type-safe CSS with vanilla-extract styling patterns",
-      "priority": 7,
-      "triggers": {
-        "keywords": ["vanilla-extract", "style", "sprinkles", "recipe", "theme", "css.ts", "styleVariants"],
-        "keywordPatterns": ["\\bstyle\\(", "\\brecipe\\(", "\\bsprinkles\\(", "\\.css\\.ts\\b"],
-        "pathPatterns": ["**/*.css.ts", "**/styles/**", "**/theme/**"],
-        "intentPatterns": [
-          "(?:style|design|theme|css).*(?:component|page|layout)",
-          "(?:create|add).*(?:style|variant|theme)"
-        ],
-        "contentPatterns": ["style\\(", "styleVariants\\(", "recipe\\(", "globalStyle\\(", "createTheme\\("]
-      },
-      "relatedSkills": ["solidjs-patterns"]
-    }
-  }
+	"name": "vanilla-extract-patterns",
+	"description": "Type-safe CSS with vanilla-extract, sprinkles, and recipes",
+	"defaultMappings": {
+		"src/styles": "vanilla-extract-patterns",
+		"src/theme": "vanilla-extract-patterns"
+	},
+	"fileExtensions": ["css.ts"],
+	"skillRules": {
+		"vanilla-extract-patterns": {
+			"description": "Type-safe CSS with vanilla-extract styling patterns",
+			"priority": 7,
+			"triggers": {
+				"keywords": [
+					"vanilla-extract",
+					"style",
+					"sprinkles",
+					"recipe",
+					"theme",
+					"css.ts",
+					"styleVariants"
+				],
+				"keywordPatterns": [
+					"\\bstyle\\(",
+					"\\brecipe\\(",
+					"\\bsprinkles\\(",
+					"\\.css\\.ts\\b"
+				],
+				"pathPatterns": ["**/*.css.ts", "**/styles/**", "**/theme/**"],
+				"intentPatterns": [
+					"(?:style|design|theme|css).*(?:component|page|layout)",
+					"(?:create|add).*(?:style|variant|theme)"
+				],
+				"contentPatterns": [
+					"style\\(",
+					"styleVariants\\(",
+					"recipe\\(",
+					"globalStyle\\(",
+					"createTheme\\("
+				]
+			},
+			"relatedSkills": ["solidjs-patterns"]
+		}
+	}
 }

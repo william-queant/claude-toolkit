@@ -1,27 +1,52 @@
 {
-  "name": "solidjs-patterns",
-  "description": "SolidJS reactivity, components, and resource patterns",
-  "defaultMappings": {
-    "src/components": "solidjs-patterns",
-    "src/hooks": "solidjs-patterns",
-    "src/pages": "solidjs-patterns"
-  },
-  "fileExtensions": ["tsx", "jsx"],
-  "skillRules": {
-    "solidjs-patterns": {
-      "description": "SolidJS reactivity, signals, effects, and component patterns",
-      "priority": 8,
-      "triggers": {
-        "keywords": ["solid", "solidjs", "signal", "createSignal", "createEffect", "createMemo", "createResource", "Show", "For", "Switch", "Match"],
-        "keywordPatterns": ["\\bcreateSignal\\b", "\\bcreateEffect\\b", "\\bcreateResource\\b", "\\bSolid\\b"],
-        "pathPatterns": ["**/*.tsx", "**/*.jsx", "**/components/**"],
-        "intentPatterns": [
-          "(?:create|build|add).*(?:component|page|view)",
-          "(?:reactive|signal|effect|memo)"
-        ],
-        "contentPatterns": ["createSignal", "createEffect", "createMemo", "createResource", "<Show", "<For", "<Switch"]
-      },
-      "relatedSkills": ["vanilla-extract-patterns", "testing-patterns"]
-    }
-  }
+	"name": "solidjs-patterns",
+	"description": "SolidJS reactivity, components, and resource patterns",
+	"defaultMappings": {
+		"src/components": "solidjs-patterns",
+		"src/hooks": "solidjs-patterns",
+		"src/pages": "solidjs-patterns"
+	},
+	"fileExtensions": ["tsx", "jsx"],
+	"skillRules": {
+		"solidjs-patterns": {
+			"description": "SolidJS reactivity, signals, effects, and component patterns",
+			"priority": 8,
+			"triggers": {
+				"keywords": [
+					"solid",
+					"solidjs",
+					"signal",
+					"createSignal",
+					"createEffect",
+					"createMemo",
+					"createResource",
+					"Show",
+					"For",
+					"Switch",
+					"Match"
+				],
+				"keywordPatterns": [
+					"\\bcreateSignal\\b",
+					"\\bcreateEffect\\b",
+					"\\bcreateResource\\b",
+					"\\bSolid\\b"
+				],
+				"pathPatterns": ["**/*.tsx", "**/*.jsx", "**/components/**"],
+				"intentPatterns": [
+					"(?:create|build|add).*(?:component|page|view)",
+					"(?:reactive|signal|effect|memo)"
+				],
+				"contentPatterns": [
+					"createSignal",
+					"createEffect",
+					"createMemo",
+					"createResource",
+					"<Show",
+					"<For",
+					"<Switch"
+				]
+			},
+			"relatedSkills": ["vanilla-extract-patterns", "testing-patterns"]
+		}
+	}
 }
