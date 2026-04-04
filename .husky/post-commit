@@ -3,33 +3,28 @@
 # Guard against recursion when amending
 [ -n "$SKIP_POST_COMMIT" ] && exit 0
 
-# Get commit info
+# Use node for cross-platform compatibility (no /tmp, date, tail, rm)
 MSG=$(git log -1 --pretty=%s)
-DATE=$(date +%Y-%m-%d)
 
-# Bump patch version in package.json
 node -e "
 const fs = require('fs');
+
+// Bump patch version
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 const v = pkg.version.split('.');
 v[2] = Number(v[2]) + 1;
 pkg.version = v.join('.');
 fs.writeFileSync('package.json', JSON.stringify(pkg, null, '\t') + '\n');
-console.log(pkg.version);
-" > /tmp/ct-version.txt
 
-VERSION=$(cat /tmp/ct-version.txt)
-rm -f /tmp/ct-version.txt
-
-# Prepend entry to CHANGELOG.md
-ENTRY="## $VERSION ($DATE)\n\n- $MSG\n"
-if [ -f CHANGELOG.md ]; then
-  # Insert after the first line (# Changelog header)
-  EXISTING=$(tail -n +2 CHANGELOG.md)
-  printf "# Changelog\n\n$ENTRY\n$EXISTING" > CHANGELOG.md
-else
-  printf "# Changelog\n\n$ENTRY" > CHANGELOG.md
-fi
+// Update changelog
+const date = new Date().toISOString().split('T')[0];
+const msg = process.argv[1];
+const entry = '## ' + pkg.version + ' (' + date + ')\n\n- ' + msg + '\n';
+const existing = fs.existsSync('CHANGELOG.md')
+  ? fs.readFileSync('CHANGELOG.md', 'utf8').replace(/^# Changelog\n*/, '')
+  : '';
+fs.writeFileSync('CHANGELOG.md', '# Changelog\n\n' + entry + '\n' + existing);
+" "$MSG"
 
 # Amend commit to include version bump
 SKIP_POST_COMMIT=1 git add package.json CHANGELOG.md
