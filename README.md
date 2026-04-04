@@ -106,6 +106,17 @@ CLAUDE.md                 # tracked — project-specific documentation
 
 Full reference documentation for all skills, commands, and agents is available in the [`docs/`](docs/README.md) directory.
 
+## Versioning
+
+The patch version auto-increments on every commit via a post-commit hook. `CHANGELOG.md` is updated automatically with the commit message.
+
+To bump major or minor versions manually:
+
+```bash
+bun version major   # 0.1.x → 1.0.0
+bun version minor   # 0.1.x → 0.2.0
+```
+
 ## Development
 
 ```bash
