@@ -1,43 +1,54 @@
 {
-  "name": "claude-toolkit",
-  "version": "0.1.0",
-  "description": "Reusable Claude Code configuration toolkit with stack-specific connectors",
-  "type": "module",
-  "bin": {
-    "claude-toolkit": "./bin/cli.ts"
-  },
-  "exports": {
-    ".": {
-      "import": "./src/index.ts",
-      "types": "./src/index.ts"
-    }
-  },
-  "files": [
-    "bin/",
-    "src/",
-    "core/",
-    "stacks/",
-    "templates/"
-  ],
-  "scripts": {
-    "typecheck": "tsc --noEmit"
-  },
-  "keywords": [
-    "claude",
-    "claude-code",
-    "ai",
-    "developer-tools",
-    "configuration",
-    "toolkit"
-  ],
-  "author": "william-queant",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/william-queant/claude-toolkit.git"
-  },
-  "devDependencies": {
-    "@types/bun": "latest",
-    "typescript": "^5.8.0"
-  }
+	"name": "claude-toolkit",
+	"version": "0.1.0",
+	"description": "Reusable Claude Code configuration toolkit with stack-specific connectors",
+	"type": "module",
+	"bin": {
+		"claude-toolkit": "./bin/cli.ts"
+	},
+	"exports": {
+		".": {
+			"import": "./src/index.ts",
+			"types": "./src/index.ts"
+		}
+	},
+	"files": [
+		"bin/",
+		"src/",
+		"core/",
+		"stacks/",
+		"templates/"
+	],
+	"scripts": {
+		"typecheck": "tsc --noEmit",
+		"lint": "biome check --write",
+		"lint:check": "biome check",
+		"prepare": "husky"
+	},
+	"lint-staged": {
+		"*.{ts,tsx,js,jsx,json,css}": "biome check --write --no-errors-on-unmatched"
+	},
+	"keywords": [
+		"claude",
+		"claude-code",
+		"ai",
+		"developer-tools",
+		"configuration",
+		"toolkit"
+	],
+	"author": "william-queant",
+	"license": "MIT",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/william-queant/claude-toolkit.git"
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.10",
+		"@types/bun": "latest",
+		"husky": "^9.1.7",
+		"lint-staged": "^16.4.0",
+		"typescript": "^5.8.0"
+	},
+	"module": "src/index.ts",
+	"private": true
 }
