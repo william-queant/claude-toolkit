@@ -98,6 +98,97 @@ const user = createAsync(() => getUser());
 
 `createAsync` is intended to become the standard async primitive in Solid 2.0.
 
+## Runtime Validation with Zod / Valibot
+
+Data entering your app from APIs, forms, or `localStorage` should be validated at runtime — TypeScript types don't exist at runtime. See [TypeScript Runtime Validation](../typescript/runtime-validation.md) for when to validate.
+
+### Validating API Responses in `createResource`
+
+Parse and type-narrow data inside the fetcher so the resource signal is guaranteed to hold valid data:
+
+```typescript
+import { z } from "zod";
+
+const UserSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string().email(),
+});
+
+type User = z.infer<typeof UserSchema>;
+
+const [user] = createResource(userId, async (id): Promise<User> => {
+  const res = await fetch(`/api/users/${id}`);
+  const json = await res.json();
+  return UserSchema.parse(json); // Throws on invalid shape
+});
+```
+
+`z.infer<typeof Schema>` keeps your TypeScript types and runtime validation in sync — no duplication.
+
+### A Reusable Typed Fetch Helper
+
+```typescript
+const fetchTyped = async <T extends z.ZodSchema>(
+  url: string,
+  schema: T,
+): Promise<z.infer<T>> => {
+  const res = await fetch(url);
+  return schema.parse(await res.json());
+};
+
+// Usage with createResource
+const [user] = createResource(userId, (id) =>
+  fetchTyped(`/api/users/${id}`, UserSchema)
+);
+```
+
+### Form Validation
+
+[@modular-forms/solid](https://modularforms.dev/solid/guides/validate-your-fields) has built-in Zod integration via the `zodForm` adapter:
+
+```typescript
+import { createForm } from "@modular-forms/solid";
+import { zodForm } from "@modular-forms/solid";
+
+const LoginSchema = z.object({
+  email: z.string().min(1, "Required").email("Invalid email"),
+  password: z.string().min(8, "Min 8 characters"),
+});
+
+type LoginForm = z.infer<typeof LoginSchema>;
+
+const [form, { Form, Field }] = createForm<LoginForm>({
+  validate: zodForm(LoginSchema),
+});
+```
+
+### Valibot as a Lighter Alternative
+
+[Valibot](https://valibot.dev/) provides the same validation patterns with a tree-shakeable design — ~1.4kb vs Zod's ~13kb for a typical form schema. Ryan Carniato (SolidJS creator) has endorsed it, and `@modular-forms/solid` supports it natively via `valiForm`.
+
+```typescript
+import * as v from "valibot";
+
+const UserSchema = v.object({
+  id: v.string(),
+  name: v.pipe(v.string(), v.nonEmpty()),
+  email: v.pipe(v.string(), v.email()),
+});
+
+type User = v.InferInput<typeof UserSchema>;
+```
+
+**Choose based on your constraints:**
+
+| Criteria        | Zod       | Valibot    |
+| --------------- | --------- | ---------- |
+| Bundle size     | ~13kb     | ~1.4kb     |
+| Tree-shakeable  | No        | Yes        |
+| Ecosystem       | Larger    | Growing    |
+| API style       | Chaining  | Functional |
+| Runtime speed   | Baseline  | ~2x faster |
+
 ## Don't Fetch in Effects
 
 ```typescript

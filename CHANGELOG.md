@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.9 (2026-04-04)
+
+- docs: add Zod/Valibot runtime validation section to SolidJS data fetching
+
 ## 0.1.8 (2026-04-04)
 
 - docs: cross-reference best practices and fix markdown lint warnings
