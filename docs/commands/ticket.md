@@ -3,7 +3,7 @@
 > Work end-to-end on a ticket or issue: understand, explore, plan, implement, deliver.
 
 **Type:** Command (slash command)
-**Source:** [`core/commands/ticket.md`](../core/commands/ticket.md)
+**Source:** [`core/commands/ct/ticket.md`](../core/commands/ct/ticket.md)
 **Allowed Tools:** Bash, Read, Write, Edit, Glob, Grep
 
 ## Usage

@@ -3,7 +3,7 @@
 > Generate a structured pull request summary from the current branch.
 
 **Type:** Command (slash command)
-**Source:** [`core/commands/pr-summary.md`](../core/commands/pr-summary.md)
+**Source:** [`core/commands/ct/pr-summary.md`](../core/commands/ct/pr-summary.md)
 **Allowed Tools:** Bash, Read
 
 ## Usage

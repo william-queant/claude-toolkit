@@ -19,12 +19,12 @@ Slash commands available in Claude Code sessions.
 
 | Command                                   | Description                                                                |
 | ----------------------------------------- | -------------------------------------------------------------------------- |
-| [/code-quality](commands/code-quality.md) | Run lint, typecheck, and format checks with structured reporting           |
-| [/pr-review](commands/pr-review.md)       | Checklist-based code review against project standards                      |
-| [/pr-summary](commands/pr-summary.md)     | Generate a structured PR summary from branch diff and commits              |
-| [/onboard](commands/onboard.md)           | Systematically explore and understand a codebase area                      |
-| [/ticket](commands/ticket.md)             | Work end-to-end on a ticket: understand, explore, plan, implement, deliver |
-| [/proto-check](commands/proto-check.md)   | Validate protobuf definitions, lint, breaking changes, and code generation |
+| [/ct:code-quality](commands/code-quality.md) | Run lint, typecheck, and format checks with structured reporting           |
+| [/ct:pr-review](commands/pr-review.md)       | Checklist-based code review against project standards                      |
+| [/ct:pr-summary](commands/pr-summary.md)     | Generate a structured PR summary from branch diff and commits              |
+| [/ct:onboard](commands/onboard.md)           | Systematically explore and understand a codebase area                      |
+| [/ct:ticket](commands/ticket.md)             | Work end-to-end on a ticket: understand, explore, plan, implement, deliver |
+| [/ct:proto-check](commands/proto-check.md)   | Validate protobuf definitions, lint, breaking changes, and code generation |
 
 ## Agents
 
@@ -32,8 +32,8 @@ Specialized agents with dedicated models and review capabilities.
 
 | Agent                                        | Model  | Description                                                                |
 | -------------------------------------------- | ------ | -------------------------------------------------------------------------- |
-| [Code Reviewer](agents/code-reviewer.md)     | Opus   | Senior code reviewer with stack-aware analysis and severity-based feedback |
-| [GitHub Workflow](agents/github-workflow.md) | Sonnet | Git workflow assistant for branching, commits, and PR creation             |
+| [ct-code-reviewer](agents/ct-code-reviewer.md)     | Opus   | Senior code reviewer with stack-aware analysis and severity-based feedback |
+| [ct-github-workflow](agents/ct-github-workflow.md) | Sonnet | Git workflow assistant for branching, commits, and PR creation             |
 
 ## Stack Skills
 

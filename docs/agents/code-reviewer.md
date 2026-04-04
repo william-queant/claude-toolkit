@@ -4,7 +4,7 @@
 
 **Type:** Agent
 **Model:** Opus (highest capability)
-**Source:** [`core/agents/code-reviewer.md`](../core/agents/code-reviewer.md)
+**Source:** [`core/agents/ct-code-reviewer.md`](../core/agents/ct-code-reviewer.md)
 
 ## Overview
 

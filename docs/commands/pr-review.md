@@ -3,7 +3,7 @@
 > Perform a checklist-based code review on the current PR or a specified PR number.
 
 **Type:** Command (slash command)
-**Source:** [`core/commands/pr-review.md`](../core/commands/pr-review.md)
+**Source:** [`core/commands/ct/pr-review.md`](../core/commands/ct/pr-review.md)
 **Allowed Tools:** Bash, Read, Glob, Grep
 
 ## Usage

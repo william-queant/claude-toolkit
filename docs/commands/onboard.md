@@ -3,7 +3,7 @@
 > Systematically explore and understand a codebase area, module, or task context.
 
 **Type:** Command (slash command)
-**Source:** [`core/commands/onboard.md`](../core/commands/onboard.md)
+**Source:** [`core/commands/ct/onboard.md`](../core/commands/ct/onboard.md)
 **Allowed Tools:** Bash, Read, Glob, Grep
 
 ## Usage

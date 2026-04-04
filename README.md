@@ -73,17 +73,17 @@ export default defineConfig({
 
 ### Core Commands
 
-- `/code-quality` — Run lint, typecheck, format checks
-- `/pr-review` — Review a PR using project standards
-- `/pr-summary` — Generate PR summary from branch
-- `/onboard` — Onboard yourself to a codebase area
-- `/ticket` — Work end-to-end on a ticket
-- `/proto-check` — Validate protobuf definitions
+- `/ct:code-quality` — Run lint, typecheck, format checks
+- `/ct:pr-review` — Review a PR using project standards
+- `/ct:pr-summary` — Generate PR summary from branch
+- `/ct:onboard` — Onboard yourself to a codebase area
+- `/ct:ticket` — Work end-to-end on a ticket
+- `/ct:proto-check` — Validate protobuf definitions
 
 ### Core Agents
 
-- `code-reviewer` — Senior code reviewer (Opus)
-- `github-workflow` — Git workflow assistant (Sonnet)
+- `ct-code-reviewer` — Senior code reviewer (Opus)
+- `ct-github-workflow` — Git workflow assistant (Sonnet)
 
 ## Project Setup
 

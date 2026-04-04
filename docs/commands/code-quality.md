@@ -3,7 +3,7 @@
 > Run code quality checks (lint, typecheck, format) on a directory or file.
 
 **Type:** Command (slash command)
-**Source:** [`core/commands/code-quality.md`](../core/commands/code-quality.md)
+**Source:** [`core/commands/ct/code-quality.md`](../core/commands/ct/code-quality.md)
 **Allowed Tools:** Bash, Read, Glob, Grep
 
 ## Usage

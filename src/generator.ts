@@ -59,8 +59,8 @@ export async function generate(projectDir: string, config: ClaudeToolkitConfig):
 	// 2. Copy core skills
 	await copyDir(join(TOOLKIT_ROOT, "core", "skills"), join(claudeDir, "skills"));
 
-	// 3. Copy core commands
-	await copyDir(join(TOOLKIT_ROOT, "core", "commands"), join(claudeDir, "commands"));
+	// 3. Copy core commands (namespaced under ct/)
+	await copyDir(join(TOOLKIT_ROOT, "core", "commands", "ct"), join(claudeDir, "commands", "ct"));
 
 	// 4. Copy core agents
 	await copyDir(join(TOOLKIT_ROOT, "core", "agents"), join(claudeDir, "agents"));

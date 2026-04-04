@@ -3,7 +3,7 @@
 > Validate protobuf definitions for correctness, lint compliance, and backward compatibility.
 
 **Type:** Command (slash command)
-**Source:** [`core/commands/proto-check.md`](../core/commands/proto-check.md)
+**Source:** [`core/commands/ct/proto-check.md`](../core/commands/ct/proto-check.md)
 **Allowed Tools:** Bash, Read, Glob, Grep
 
 ## Usage

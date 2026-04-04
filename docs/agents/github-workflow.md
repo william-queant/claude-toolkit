@@ -4,7 +4,7 @@
 
 **Type:** Agent
 **Model:** Sonnet
-**Source:** [`core/agents/github-workflow.md`](../core/agents/github-workflow.md)
+**Source:** [`core/agents/ct-github-workflow.md`](../core/agents/ct-github-workflow.md)
 
 ## Overview
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.4 (2026-04-04)
+
+- refactor: namespace commands under ct/ and prefix agents with ct-
+
 ## 0.1.3 (2026-04-04)
 
 - fix: production readiness — remove private flag, add LICENSE, fix cross-platform hook
