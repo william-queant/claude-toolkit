@@ -62,6 +62,8 @@ export interface ClaudeToolkitConfig {
 	customSkills?: string[];
 	/** Skills to exclude from core set */
 	excludeSkills?: string[];
+	/** Whether to scaffold base configs (biome.json, tsconfig.json) on init. Default: true */
+	scaffoldConfigs?: boolean;
 }
 
 /** Stack pack metadata (loaded from stack.json) */

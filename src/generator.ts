@@ -1,17 +1,12 @@
+import { copyFile as fsCopyFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import type {
-	ClaudeToolkitConfig,
-	ResolvedConfig,
-	StackPack,
-} from "./types.js";
+import type { ClaudeToolkitConfig, ResolvedConfig, StackPack } from "./types.js";
 import { copyDir, exists, readJson, writeFileEnsureDir } from "./utils.js";
 
 const TOOLKIT_ROOT = resolve(import.meta.dirname, "..");
 
 /** Resolve the full configuration by merging core + stacks + project config */
-async function resolveConfig(
-	config: ClaudeToolkitConfig,
-): Promise<ResolvedConfig> {
+async function resolveConfig(config: ClaudeToolkitConfig): Promise<ResolvedConfig> {
 	const stacks: StackPack[] = [];
 	const allMappings: Record<string, string> = {};
 
@@ -34,9 +29,7 @@ async function resolveConfig(
 	// Resolve hooks with package manager defaults
 	const installCmd =
 		config.hooks?.installCommand ??
-		(config.packageManager === "bun"
-			? "bun install"
-			: `${config.packageManager} install`);
+		(config.packageManager === "bun" ? "bun install" : `${config.packageManager} install`);
 
 	const hooks = {
 		...config.hooks,
@@ -56,10 +49,7 @@ async function resolveConfig(
 }
 
 /** Generate the .claude/ directory from resolved config */
-export async function generate(
-	projectDir: string,
-	config: ClaudeToolkitConfig,
-): Promise<void> {
+export async function generate(projectDir: string, config: ClaudeToolkitConfig): Promise<void> {
 	const resolved = await resolveConfig(config);
 	const claudeDir = join(projectDir, ".claude");
 
@@ -67,22 +57,13 @@ export async function generate(
 	await copyDir(join(TOOLKIT_ROOT, "core", "hooks"), join(claudeDir, "hooks"));
 
 	// 2. Copy core skills
-	await copyDir(
-		join(TOOLKIT_ROOT, "core", "skills"),
-		join(claudeDir, "skills"),
-	);
+	await copyDir(join(TOOLKIT_ROOT, "core", "skills"), join(claudeDir, "skills"));
 
 	// 3. Copy core commands
-	await copyDir(
-		join(TOOLKIT_ROOT, "core", "commands"),
-		join(claudeDir, "commands"),
-	);
+	await copyDir(join(TOOLKIT_ROOT, "core", "commands"), join(claudeDir, "commands"));
 
 	// 4. Copy core agents
-	await copyDir(
-		join(TOOLKIT_ROOT, "core", "agents"),
-		join(claudeDir, "agents"),
-	);
+	await copyDir(join(TOOLKIT_ROOT, "core", "agents"), join(claudeDir, "agents"));
 
 	// 5. Copy stack-specific skills
 	for (const stackName of config.stacks) {
@@ -114,7 +95,10 @@ export async function generate(
 		].join("\n"),
 	);
 
-	// 9. Generate skills README
+	// 9. Scaffold base configs
+	await scaffoldConfigs(projectDir, resolved);
+
+	// 10. Generate skills README
 	await generateSkillsReadme(claudeDir, resolved);
 
 	console.log(
@@ -123,10 +107,7 @@ export async function generate(
 }
 
 /** Generate skill-rules.json from resolved config */
-async function generateSkillRules(
-	claudeDir: string,
-	resolved: ResolvedConfig,
-): Promise<void> {
+async function generateSkillRules(claudeDir: string, resolved: ResolvedConfig): Promise<void> {
 	// Load all SKILL.md files to build the rules
 	const rules: Record<string, unknown> = {};
 
@@ -134,9 +115,9 @@ async function generateSkillRules(
 	for (const stackName of resolved.config.stacks) {
 		const stackJsonPath = join(TOOLKIT_ROOT, "stacks", stackName, "stack.json");
 		if (exists(stackJsonPath)) {
-			const pack = await readJson<
-				StackPack & { skillRules?: Record<string, unknown> }
-			>(stackJsonPath);
+			const pack = await readJson<StackPack & { skillRules?: Record<string, unknown> }>(
+				stackJsonPath,
+			);
 			if (pack.skillRules) {
 				Object.assign(rules, pack.skillRules);
 			}
@@ -144,11 +125,7 @@ async function generateSkillRules(
 	}
 
 	// Load core skill rules template
-	const coreRulesPath = join(
-		TOOLKIT_ROOT,
-		"templates",
-		"skill-rules.base.json",
-	);
+	const coreRulesPath = join(TOOLKIT_ROOT, "templates", "skill-rules.base.json");
 	const baseRules = exists(coreRulesPath)
 		? await readJson<Record<string, unknown>>(coreRulesPath)
 		: {};
@@ -172,10 +149,7 @@ async function generateSkillRules(
 		},
 		directoryMappings: resolved.directoryMappings,
 		skills: {
-			...(((baseRules as Record<string, unknown>).skills as Record<
-				string,
-				unknown
-			>) ?? {}),
+			...(((baseRules as Record<string, unknown>).skills as Record<string, unknown>) ?? {}),
 			...rules,
 		},
 	};
@@ -187,10 +161,7 @@ async function generateSkillRules(
 }
 
 /** Generate settings.json with hooks */
-async function generateSettings(
-	claudeDir: string,
-	resolved: ResolvedConfig,
-): Promise<void> {
+async function generateSettings(claudeDir: string, resolved: ResolvedConfig): Promise<void> {
 	const { hooks, config } = resolved;
 	const protectedBranches = config.git?.protectedBranches ?? ["main"];
 
@@ -299,24 +270,38 @@ async function generateSettings(
 	);
 }
 
+/** Scaffold base config files (biome.json, tsconfig.json) into the project */
+async function scaffoldConfigs(projectDir: string, resolved: ResolvedConfig): Promise<void> {
+	if (resolved.config.scaffoldConfigs === false) return;
+
+	const configsDir = join(TOOLKIT_ROOT, "templates", "configs");
+	const configs = [
+		{ src: "biome.base.json", dest: "biome.json" },
+		{ src: "tsconfig.base.json", dest: "tsconfig.json" },
+	];
+
+	for (const { src, dest } of configs) {
+		const destPath = join(projectDir, dest);
+		if (exists(destPath)) {
+			console.log(`  Skipped ${dest} (already exists)`);
+		} else {
+			await fsCopyFile(join(configsDir, src), destPath);
+			console.log(`  Scaffolded ${dest}`);
+		}
+	}
+}
+
 /** Generate skills/README.md */
-async function generateSkillsReadme(
-	claudeDir: string,
-	resolved: ResolvedConfig,
-): Promise<void> {
+async function generateSkillsReadme(claudeDir: string, resolved: ResolvedConfig): Promise<void> {
 	let content = "# Claude Code Skills\n\n";
 	content += "Auto-generated by claude-toolkit. Do not edit manually.\n\n";
 	content += "## Core Skills\n\n";
 	content += "| Skill | Description |\n";
 	content += "|-------|-------------|\n";
-	content +=
-		"| systematic-debugging | Four-phase debugging methodology, root cause analysis |\n";
-	content +=
-		"| testing-patterns | Test-driven development workflow and patterns |\n";
-	content +=
-		"| typescript-conventions | TypeScript strict mode and conventions |\n";
-	content +=
-		"| verification-before-completion | Evidence-based completion claims protocol |\n";
+	content += "| systematic-debugging | Four-phase debugging methodology, root cause analysis |\n";
+	content += "| testing-patterns | Test-driven development workflow and patterns |\n";
+	content += "| typescript-conventions | TypeScript strict mode and conventions |\n";
+	content += "| verification-before-completion | Evidence-based completion claims protocol |\n";
 	content += "\n## Stack Skills\n\n";
 	content += "| Skill | Stack | Description |\n";
 	content += "|-------|-------|-------------|\n";

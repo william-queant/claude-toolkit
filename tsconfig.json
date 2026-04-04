@@ -1,17 +1,8 @@
 {
+	"extends": "./templates/configs/tsconfig.base.json",
 	"compilerOptions": {
-		"target": "ESNext",
-		"module": "ESNext",
-		"moduleResolution": "bundler",
-		"strict": true,
-		"esModuleInterop": true,
-		"skipLibCheck": true,
-		"forceConsistentCasingInFileNames": true,
 		"outDir": "./dist",
 		"rootDir": ".",
-		"declaration": true,
-		"declarationMap": true,
-		"sourceMap": true,
 		"types": ["bun"]
 	},
 	"include": ["src/**/*.ts", "bin/**/*.ts"],
