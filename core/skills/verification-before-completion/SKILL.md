@@ -1,5 +1,5 @@
 ---
-name: Verification Before Completion
+name: ct-verification-before-completion
 description: Evidence-based completion claims -- never say "done" without proof that the work is correct.
 ---
 

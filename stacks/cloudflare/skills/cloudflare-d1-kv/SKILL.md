@@ -1,5 +1,5 @@
 ---
-name: cloudflare-d1-kv
+name: ct-cloudflare-d1-kv
 description: Cloudflare D1 SQL database and KV cache patterns
 ---
 

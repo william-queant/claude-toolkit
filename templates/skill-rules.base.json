@@ -1,19 +1,10 @@
 {
 	"skills": {
-		"systematic-debugging": {
+		"ct-systematic-debugging": {
 			"description": "Four-phase debugging with root cause analysis",
 			"priority": 9,
 			"triggers": {
-				"keywords": [
-					"bug",
-					"debug",
-					"fix",
-					"error",
-					"issue",
-					"broken",
-					"crash",
-					"failing"
-				],
+				"keywords": ["bug", "debug", "fix", "error", "issue", "broken", "crash", "failing"],
 				"keywordPatterns": [
 					"\\bbug\\b",
 					"\\bfix\\b",
@@ -30,19 +21,11 @@
 			},
 			"excludePatterns": ["fix typo", "fix formatting", "fix lint"]
 		},
-		"testing-patterns": {
+		"ct-testing-patterns": {
 			"description": "Test-driven development workflow and patterns",
 			"priority": 9,
 			"triggers": {
-				"keywords": [
-					"test",
-					"spec",
-					"tdd",
-					"mock",
-					"factory",
-					"vitest",
-					"jest"
-				],
+				"keywords": ["test", "spec", "tdd", "mock", "factory", "vitest", "jest"],
 				"keywordPatterns": ["\\btest(?:s|ing)?\\b", "\\bspec\\b", "unit test"],
 				"pathPatterns": [
 					"**/*.test.ts",
@@ -56,49 +39,27 @@
 					"(?:test|spec).*(?:for|of|the)",
 					"(?:red.green.refactor|tdd)"
 				],
-				"contentPatterns": [
-					"describe\\(",
-					"it\\(",
-					"expect\\(",
-					"vi\\.mock",
-					"jest\\.mock"
-				]
+				"contentPatterns": ["describe\\(", "it\\(", "expect\\(", "vi\\.mock", "jest\\.mock"]
 			},
 			"excludePatterns": ["e2e", "end-to-end"]
 		},
-		"typescript-conventions": {
+		"ct-typescript-conventions": {
 			"description": "TypeScript strict mode and conventions",
 			"priority": 5,
 			"triggers": {
-				"keywords": [
-					"typescript",
-					"type",
-					"interface",
-					"generic",
-					"strict mode"
-				],
+				"keywords": ["typescript", "type", "interface", "generic", "strict mode"],
 				"keywordPatterns": ["\\btype\\b", "\\binterface\\b", "\\bgeneric\\b"],
 				"pathPatterns": ["**/*.d.ts", "**/types/**", "**/types.ts"],
-				"intentPatterns": [
-					"(?:define|create).*(?:type|interface)",
-					"(?:type).*(?:error|issue)"
-				],
+				"intentPatterns": ["(?:define|create).*(?:type|interface)", "(?:type).*(?:error|issue)"],
 				"contentPatterns": ["interface ", "type ", ": unknown", "as const"]
 			},
 			"excludePatterns": ["issue type", "type of bug"]
 		},
-		"verification-before-completion": {
+		"ct-verification-before-completion": {
 			"description": "Evidence-based completion claims protocol",
 			"priority": 8,
 			"triggers": {
-				"keywords": [
-					"verify",
-					"check",
-					"confirm",
-					"done",
-					"complete",
-					"finished"
-				],
+				"keywords": ["verify", "check", "confirm", "done", "complete", "finished"],
 				"intentPatterns": [
 					"(?:is it|are we).*(?:done|complete|finished)",
 					"(?:verify|check|confirm).*(?:works|passes)"
@@ -106,18 +67,11 @@
 				"contextPatterns": ["before claiming", "make sure", "double check"]
 			}
 		},
-		"github-actions": {
+		"ct-github-actions": {
 			"description": "GitHub Actions CI/CD workflow patterns",
 			"priority": 6,
 			"triggers": {
-				"keywords": [
-					"github action",
-					"github workflow",
-					"workflow",
-					"ci/cd",
-					"cicd",
-					"pipeline"
-				],
+				"keywords": ["github action", "github workflow", "workflow", "ci/cd", "cicd", "pipeline"],
 				"keywordPatterns": ["github.action", "ci/?cd", "\\bworkflow\\b"],
 				"pathPatterns": [".github/workflows/**", ".github/**/*.yml"],
 				"intentPatterns": [
@@ -127,7 +81,7 @@
 				"contentPatterns": ["runs-on:", "uses:", "steps:"]
 			}
 		},
-		"code-review": {
+		"ct-code-review": {
 			"description": "Handle code review feedback",
 			"priority": 4,
 			"triggers": {

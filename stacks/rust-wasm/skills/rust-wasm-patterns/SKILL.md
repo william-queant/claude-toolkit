@@ -1,5 +1,5 @@
 ---
-name: rust-wasm-patterns
+name: ct-rust-wasm-patterns
 description: Rust WASM patterns for Cloudflare Workers with worker-rs
 ---
 

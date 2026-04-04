@@ -1,5 +1,5 @@
 ---
-name: i18n-typesafe
+name: ct-i18n-typesafe
 description: Typesafe-i18n internationalization patterns for SolidJS
 ---
 

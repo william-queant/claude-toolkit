@@ -38,10 +38,10 @@ async function resolveConfig(config: ClaudeToolkitConfig): Promise<ResolvedConfi
 
 	// Collect skill names
 	const skills = [
-		"systematic-debugging",
-		"testing-patterns",
-		"typescript-conventions",
-		"verification-before-completion",
+		"ct-systematic-debugging",
+		"ct-testing-patterns",
+		"ct-typescript-conventions",
+		"ct-verification-before-completion",
 		...(config.excludeSkills ? [] : []),
 	].filter((s) => !config.excludeSkills?.includes(s));
 
@@ -298,10 +298,11 @@ async function generateSkillsReadme(claudeDir: string, resolved: ResolvedConfig)
 	content += "## Core Skills\n\n";
 	content += "| Skill | Description |\n";
 	content += "|-------|-------------|\n";
-	content += "| systematic-debugging | Four-phase debugging methodology, root cause analysis |\n";
-	content += "| testing-patterns | Test-driven development workflow and patterns |\n";
-	content += "| typescript-conventions | TypeScript strict mode and conventions |\n";
-	content += "| verification-before-completion | Evidence-based completion claims protocol |\n";
+	content +=
+		"| ct-systematic-debugging | Four-phase debugging methodology, root cause analysis |\n";
+	content += "| ct-testing-patterns | Test-driven development workflow and patterns |\n";
+	content += "| ct-typescript-conventions | TypeScript strict mode and conventions |\n";
+	content += "| ct-verification-before-completion | Evidence-based completion claims protocol |\n";
 	content += "\n## Stack Skills\n\n";
 	content += "| Skill | Stack | Description |\n";
 	content += "|-------|-------|-------------|\n";

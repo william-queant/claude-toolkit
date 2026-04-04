@@ -1,5 +1,5 @@
 ---
-name: TypeScript Conventions
+name: ct-typescript-conventions
 description: Strict TypeScript patterns for type safety, readability, and maintainable codebases.
 ---
 

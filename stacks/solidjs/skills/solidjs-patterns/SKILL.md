@@ -1,5 +1,5 @@
 ---
-name: solidjs-patterns
+name: ct-solidjs-patterns
 description: SolidJS reactivity, signals, effects, and component patterns
 ---
 

@@ -1,5 +1,5 @@
 ---
-name: protobuf-contracts
+name: ct-protobuf-contracts
 description: Protocol Buffer definitions and code generation for frontend/backend contracts
 ---
 

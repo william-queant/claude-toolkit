@@ -8,10 +8,10 @@ Skills that are always included regardless of stack configuration.
 
 | Skill                                                                      | Description                                                                 |
 | -------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
-| [Systematic Debugging](skills/systematic-debugging.md)                     | Four-phase methodology for diagnosing and fixing bugs without guesswork     |
-| [Testing Patterns](skills/testing-patterns.md)                             | Framework-agnostic TDD practices, mocking strategies, and test organization |
-| [TypeScript Conventions](skills/typescript-conventions.md)                 | Strict TypeScript patterns for type safety and maintainability              |
-| [Verification Before Completion](skills/verification-before-completion.md) | Evidence-based completion claims with structured verification checklist     |
+| [ct-systematic-debugging](skills/systematic-debugging.md)                     | Four-phase methodology for diagnosing and fixing bugs without guesswork     |
+| [ct-testing-patterns](skills/testing-patterns.md)                             | Framework-agnostic TDD practices, mocking strategies, and test organization |
+| [ct-typescript-conventions](skills/typescript-conventions.md)                 | Strict TypeScript patterns for type safety and maintainability              |
+| [ct-verification-before-completion](skills/verification-before-completion.md) | Evidence-based completion claims with structured verification checklist     |
 
 ## Commands
 
@@ -41,9 +41,9 @@ Stack-specific skills activated based on your `claude-toolkit.config.ts` configu
 
 | Skill                                                          | Stack             | Description                                                                    |
 | -------------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------ |
-| [SolidJS Patterns](stacks/solidjs-patterns.md)                 | `solidjs`         | Reactivity, signals, effects, component patterns, and props handling           |
-| [Vanilla Extract Patterns](stacks/vanilla-extract-patterns.md) | `vanilla-extract` | Type-safe CSS with zero runtime: styles, recipes, themes, sprinkles            |
-| [Rust WASM Patterns](stacks/rust-wasm-patterns.md)             | `rust-wasm`       | Rust WASM for Cloudflare Workers: routing, handlers, env bindings              |
-| [Protobuf Contracts](stacks/protobuf-contracts.md)             | `protobuf`        | Protocol Buffers for API contracts: schema design, versioning, code generation |
-| [Cloudflare D1 & KV](stacks/cloudflare-d1-kv.md)               | `cloudflare`      | D1 database and KV cache: queries, migrations, caching patterns                |
-| [Typesafe-i18n](stacks/i18n-typesafe.md)                       | `i18n-typesafe`   | Type-safe internationalization with compile-time key checking                  |
+| [ct-solidjs-patterns](stacks/solidjs-patterns.md)                 | `solidjs`         | Reactivity, signals, effects, component patterns, and props handling           |
+| [ct-vanilla-extract-patterns](stacks/vanilla-extract-patterns.md) | `vanilla-extract` | Type-safe CSS with zero runtime: styles, recipes, themes, sprinkles            |
+| [ct-rust-wasm-patterns](stacks/rust-wasm-patterns.md)             | `rust-wasm`       | Rust WASM for Cloudflare Workers: routing, handlers, env bindings              |
+| [ct-protobuf-contracts](stacks/protobuf-contracts.md)             | `protobuf`        | Protocol Buffers for API contracts: schema design, versioning, code generation |
+| [ct-cloudflare-d1-kv](stacks/cloudflare-d1-kv.md)                 | `cloudflare`      | D1 database and KV cache: queries, migrations, caching patterns                |
+| [ct-i18n-typesafe](stacks/i18n-typesafe.md)                       | `i18n-typesafe`   | Type-safe internationalization with compile-time key checking                  |

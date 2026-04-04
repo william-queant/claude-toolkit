@@ -1,5 +1,5 @@
 ---
-name: Systematic Debugging
+name: ct-systematic-debugging
 description: Four-phase methodology for diagnosing and fixing bugs efficiently without guesswork.
 ---
 

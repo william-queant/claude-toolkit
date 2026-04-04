@@ -1,5 +1,5 @@
 ---
-name: vanilla-extract-patterns
+name: ct-vanilla-extract-patterns
 description: Type-safe CSS with vanilla-extract, sprinkles, and recipes
 ---
 

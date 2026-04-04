@@ -1,5 +1,5 @@
 ---
-name: Testing Patterns
+name: ct-testing-patterns
 description: Generic test-driven development practices and patterns applicable to any language or test framework.
 ---
 

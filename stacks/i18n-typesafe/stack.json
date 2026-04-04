@@ -1,24 +1,17 @@
 {
-	"name": "i18n-typesafe",
+	"name": "ct-i18n-typesafe",
 	"description": "Typesafe internationalization with typesafe-i18n",
 	"defaultMappings": {
-		"src/locales": "i18n-typesafe",
-		"src/i18n": "i18n-typesafe"
+		"src/locales": "ct-i18n-typesafe",
+		"src/i18n": "ct-i18n-typesafe"
 	},
 	"fileExtensions": [],
 	"skillRules": {
-		"i18n-typesafe": {
+		"ct-i18n-typesafe": {
 			"description": "Typesafe-i18n internationalization patterns",
 			"priority": 6,
 			"triggers": {
-				"keywords": [
-					"i18n",
-					"translation",
-					"locale",
-					"typesafe-i18n",
-					"localization",
-					"translate"
-				],
+				"keywords": ["i18n", "translation", "locale", "typesafe-i18n", "localization", "translate"],
 				"keywordPatterns": ["\\bi18n\\b", "\\blocale\\b", "\\btranslat"],
 				"pathPatterns": ["**/locales/**", "**/i18n/**"],
 				"intentPatterns": [

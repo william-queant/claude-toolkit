@@ -1,14 +1,14 @@
 {
-	"name": "solidjs-patterns",
+	"name": "ct-solidjs-patterns",
 	"description": "SolidJS reactivity, components, and resource patterns",
 	"defaultMappings": {
-		"src/components": "solidjs-patterns",
-		"src/hooks": "solidjs-patterns",
-		"src/pages": "solidjs-patterns"
+		"src/components": "ct-solidjs-patterns",
+		"src/hooks": "ct-solidjs-patterns",
+		"src/pages": "ct-solidjs-patterns"
 	},
 	"fileExtensions": ["tsx", "jsx"],
 	"skillRules": {
-		"solidjs-patterns": {
+		"ct-solidjs-patterns": {
 			"description": "SolidJS reactivity, signals, effects, and component patterns",
 			"priority": 8,
 			"triggers": {
@@ -46,7 +46,7 @@
 					"<Switch"
 				]
 			},
-			"relatedSkills": ["vanilla-extract-patterns", "testing-patterns"]
+			"relatedSkills": ["ct-vanilla-extract-patterns", "ct-testing-patterns"]
 		}
 	}
 }

@@ -1,51 +1,26 @@
 {
-	"name": "cloudflare-d1-kv",
+	"name": "ct-cloudflare-d1-kv",
 	"description": "Cloudflare D1 database and KV cache patterns",
 	"defaultMappings": {
-		"src/db": "cloudflare-d1-kv",
-		"migrations": "cloudflare-d1-kv"
+		"src/db": "ct-cloudflare-d1-kv",
+		"migrations": "ct-cloudflare-d1-kv"
 	},
 	"fileExtensions": ["sql"],
 	"skillRules": {
-		"cloudflare-d1-kv": {
+		"ct-cloudflare-d1-kv": {
 			"description": "Cloudflare D1 SQL and KV cache patterns",
 			"priority": 7,
 			"triggers": {
-				"keywords": [
-					"d1",
-					"kv",
-					"cloudflare",
-					"wrangler",
-					"database",
-					"cache",
-					"sql",
-					"migration"
-				],
-				"keywordPatterns": [
-					"\\bd1\\b",
-					"\\bkv\\b",
-					"\\bwrangler\\b",
-					"\\bmigration\\b"
-				],
-				"pathPatterns": [
-					"**/migrations/**",
-					"**/*.sql",
-					"**/db/**",
-					"**/wrangler.toml"
-				],
+				"keywords": ["d1", "kv", "cloudflare", "wrangler", "database", "cache", "sql", "migration"],
+				"keywordPatterns": ["\\bd1\\b", "\\bkv\\b", "\\bwrangler\\b", "\\bmigration\\b"],
+				"pathPatterns": ["**/migrations/**", "**/*.sql", "**/db/**", "**/wrangler.toml"],
 				"intentPatterns": [
 					"(?:create|add|run).*(?:migration|query|table)",
 					"(?:cache|store|fetch).*(?:data|value|key)"
 				],
-				"contentPatterns": [
-					"D1Database",
-					"KVNamespace",
-					"env\\.DB",
-					"env\\.KV",
-					"prepared\\("
-				]
+				"contentPatterns": ["D1Database", "KVNamespace", "env\\.DB", "env\\.KV", "prepared\\("]
 			},
-			"relatedSkills": ["rust-wasm-patterns"]
+			"relatedSkills": ["ct-rust-wasm-patterns"]
 		}
 	}
 }

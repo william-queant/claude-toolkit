@@ -66,10 +66,10 @@ export default defineConfig({
 
 ### Core Skills
 
-- `systematic-debugging` — Four-phase debugging methodology
-- `testing-patterns` — TDD workflow and patterns
-- `typescript-conventions` — TypeScript strict mode best practices
-- `verification-before-completion` — Evidence-based completion claims
+- `ct-systematic-debugging` — Four-phase debugging methodology
+- `ct-testing-patterns` — TDD workflow and patterns
+- `ct-typescript-conventions` — TypeScript strict mode best practices
+- `ct-verification-before-completion` — Evidence-based completion claims
 
 ### Core Commands
 

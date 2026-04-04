@@ -1,13 +1,13 @@
 {
-	"name": "vanilla-extract-patterns",
+	"name": "ct-vanilla-extract-patterns",
 	"description": "Type-safe CSS with vanilla-extract, sprinkles, and recipes",
 	"defaultMappings": {
-		"src/styles": "vanilla-extract-patterns",
-		"src/theme": "vanilla-extract-patterns"
+		"src/styles": "ct-vanilla-extract-patterns",
+		"src/theme": "ct-vanilla-extract-patterns"
 	},
 	"fileExtensions": ["css.ts"],
 	"skillRules": {
-		"vanilla-extract-patterns": {
+		"ct-vanilla-extract-patterns": {
 			"description": "Type-safe CSS with vanilla-extract styling patterns",
 			"priority": 7,
 			"triggers": {
@@ -20,12 +20,7 @@
 					"css.ts",
 					"styleVariants"
 				],
-				"keywordPatterns": [
-					"\\bstyle\\(",
-					"\\brecipe\\(",
-					"\\bsprinkles\\(",
-					"\\.css\\.ts\\b"
-				],
+				"keywordPatterns": ["\\bstyle\\(", "\\brecipe\\(", "\\bsprinkles\\(", "\\.css\\.ts\\b"],
 				"pathPatterns": ["**/*.css.ts", "**/styles/**", "**/theme/**"],
 				"intentPatterns": [
 					"(?:style|design|theme|css).*(?:component|page|layout)",
@@ -39,7 +34,7 @@
 					"createTheme\\("
 				]
 			},
-			"relatedSkills": ["solidjs-patterns"]
+			"relatedSkills": ["ct-solidjs-patterns"]
 		}
 	}
 }
