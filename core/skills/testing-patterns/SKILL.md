@@ -5,80 +5,48 @@ description: Generic test-driven development practices and patterns applicable t
 
 # Testing Patterns
 
-Principles and patterns for writing tests that catch bugs, enable refactoring, and serve as documentation. These are framework-agnostic -- adapt the syntax to your project's test runner.
+## TDD Cycle
 
-## TDD Cycle: Red, Green, Refactor
-
-1. **Red.** Write a failing test that describes the desired behavior. Run it. Confirm it fails for the right reason.
-2. **Green.** Write the minimal code to make the test pass. Do not optimize or clean up yet.
-3. **Refactor.** Improve the code (production and test) while keeping all tests green. Remove duplication, improve naming, simplify logic.
-
-Commit at each stage. The cycle keeps scope small and provides a safety net for every change.
+1. **Red** -- Write a failing test for desired behavior. Confirm it fails for the right reason.
+2. **Green** -- Minimal code to pass. No optimization yet.
+3. **Refactor** -- Clean up while keeping tests green. Commit at each stage.
 
 ## Test Behavior, Not Implementation
 
-Tests should describe *what* the code does, not *how* it does it internally.
+Test *what* code does (public interface, observable outputs), not *how* (internal state, call counts). Implementation-coupled tests break on every refactor.
 
-- **Good:** "returns the user's full name when first and last name are provided"
-- **Bad:** "calls `String.prototype.concat` with first name and space and last name"
-
-When tests are coupled to implementation, every refactor breaks tests without any actual bug. Test the public interface and observable outputs.
-
-## Factory Pattern for Test Data
-
-Create factory functions that produce valid test objects with sensible defaults. Accept overrides for the fields relevant to each test.
+## Factory Pattern
 
 ```
 function getMockUser(overrides = {}) {
-  return {
-    id: "user-1",
-    email: "test@example.com",
-    name: "Test User",
-    role: "member",
-    createdAt: new Date("2024-01-01"),
-    ...overrides,
-  };
+  return { id: "user-1", email: "test@example.com", name: "Test User", role: "member", ...overrides };
 }
-
-// Usage: only specify what matters for this test
 const admin = getMockUser({ role: "admin" });
 ```
 
-Benefits:
-- Tests clearly show which fields matter for the scenario.
-- Adding a new required field to the type only requires updating the factory, not every test.
-- Reduces noise -- readers focus on the relevant data.
+New required fields update the factory once, not every test.
 
-## Test File Organization
+## Organization
 
-- **Co-locate tests with source** or mirror the source directory structure under a `tests/` directory. Either convention works; be consistent.
-- **One test file per module.** Name it `module.test.ext` or `module.spec.ext`.
-- **Group related tests** using `describe` blocks (or your framework's equivalent). Group by method, feature, or scenario.
-- **Use descriptive test names** that read as sentences: `it("rejects expired tokens")` not `it("test3")`.
+- Co-locate tests or mirror source structure. One test file per module (`module.test.ext`).
+- Group with `describe`, name as sentences: `it("rejects expired tokens")`.
 
-## Mocking Strategies
+## Mocking Rules
 
-Mocks are a tool of last resort. Overuse makes tests brittle and less trustworthy.
+- Prefer real dependencies (in-memory DB, local server) when feasible.
+- Mock at boundaries only (external APIs, email, payments), not internal modules.
+- Keep mocks minimal -- only methods your code calls. Reset between tests.
+- Verify mocks match the real API. Update when APIs change.
 
-- **Prefer real dependencies** when feasible. Use an in-memory database, a local test server, or the actual module.
-- **Mock at boundaries.** Mock external services (HTTP APIs, email providers, payment gateways), not internal modules.
-- **Keep mocks minimal.** Only mock the methods your code actually calls. Do not replicate the full interface.
-- **Verify mock contracts.** When mocking an external API, ensure your mock matches the real API's behavior. Update mocks when the API changes.
-- **Reset mocks between tests.** Shared mock state causes flaky tests and order-dependent failures.
+## Test Pyramid
 
-## Test Categories
+Many unit tests (fast, focused) > some integration tests (multi-component) > few E2E tests (full flow).
 
-- **Unit tests.** Test a single function or class in isolation. Fast, focused, many of these.
-- **Integration tests.** Test multiple components working together (e.g., API route to database). Slower, fewer of these.
-- **End-to-end tests.** Test the full user flow through the real system. Slowest, fewest of these.
+## Anti-Patterns
 
-The ratio should be roughly pyramid-shaped: many unit tests, some integration tests, few E2E tests.
-
-## Anti-patterns
-
-- **Testing implementation details.** Asserting on internal state, private methods, or the number of times a function was called. These break on every refactor.
-- **Overmocking.** When most of the test is mock setup, you are testing your mocks, not your code.
-- **Copy-paste test cases.** Duplicated test code becomes a maintenance burden. Use factories, helper functions, and parameterized tests.
-- **No assertions.** A test that runs code but asserts nothing is worse than no test -- it provides false confidence.
-- **Ignoring flaky tests.** A test that sometimes fails is either wrong or exposing a real bug. Fix or delete it; never skip indefinitely.
-- **Testing only the happy path.** Error cases, edge cases, and boundary conditions are where bugs live. Test them explicitly.
+1. **Testing implementation** -- Asserting internal state or call counts breaks on refactors.
+2. **Overmocking** -- If most of the test is mock setup, you're testing mocks.
+3. **Copy-paste tests** -- Use factories and parameterized tests.
+4. **No assertions** -- Worse than no test. False confidence.
+5. **Ignoring flaky tests** -- Fix or delete; never skip indefinitely.
+6. **Happy path only** -- Error cases and boundary conditions are where bugs live.

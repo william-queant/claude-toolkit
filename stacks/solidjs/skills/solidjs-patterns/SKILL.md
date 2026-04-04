@@ -5,128 +5,62 @@ description: SolidJS reactivity, signals, effects, and component patterns
 
 # SolidJS Patterns
 
-## Reactivity Model
+Components run **once**. Only reactive expressions re-execute. This is not React.
 
-SolidJS uses **fine-grained reactivity** with no virtual DOM. Components run once; only the reactive expressions inside them re-execute when dependencies change. This is fundamentally different from React.
+## Primitives
 
-## Core Primitives
-
-### createSignal
 ```tsx
-const [count, setCount] = createSignal(0);
-// Read: count() -- always call as function
-// Write: setCount(1) or setCount(prev => prev + 1)
+const [count, setCount] = createSignal(0);      // always call: count()
+const doubled = createMemo(() => count() * 2);   // cached derived value
+createEffect(() => console.log(count()));         // side effect on change
+const [data] = createResource(userId, fetchUser); // async: data(), data.loading, data.error
 ```
 
-### createEffect
-Runs side effects when tracked dependencies change. Automatically tracks any signal read inside it.
-```tsx
-createEffect(() => {
-  console.log("Count changed:", count());
-});
-```
+## Control Flow
 
-### createMemo
-Derived computation that caches its result. Only recalculates when dependencies change.
 ```tsx
-const doubled = createMemo(() => count() * 2);
-```
-
-### createResource
-Async data fetching tied to a signal source. Returns a resource with loading/error states.
-```tsx
-const [data] = createResource(userId, fetchUser);
-// data() — the resolved value
-// data.loading — boolean
-// data.error — error if rejected
-```
-
-## Component Patterns
-
-### Show — conditional rendering
-```tsx
-<Show when={isLoggedIn()} fallback={<Login />}>
-  <Dashboard />
-</Show>
-```
-
-### For — list rendering (keyed by reference)
-```tsx
-<For each={items()}>{(item, index) =>
-  <div>{item.name} at {index()}</div>
-}</For>
-```
-
-### Switch/Match — multi-branch conditional
-```tsx
-<Switch fallback={<DefaultView />}>
+<Show when={ok()} fallback={<Fallback />}><Content /></Show>
+<For each={items()}>{(item, i) => <div>{item.name} at {i()}</div>}</For>
+<Switch fallback={<Default />}>
   <Match when={state() === "loading"}><Spinner /></Match>
   <Match when={state() === "error"}><Error /></Match>
-  <Match when={state() === "ready"}><Content /></Match>
 </Switch>
 ```
 
-### ErrorBoundary
-```tsx
-<ErrorBoundary fallback={(err) => <div>Error: {err.message}</div>}>
-  <RiskyComponent />
-</ErrorBoundary>
-```
+## Props
 
-### Suspense
-```tsx
-<Suspense fallback={<Loading />}>
-  <AsyncComponent />
-</Suspense>
-```
-
-## Props Handling
-
-**CRITICAL: Never destructure props.** Destructuring breaks reactivity because it reads the value once at call time.
+**CRITICAL: Never destructure props.** Destructuring breaks reactivity.
 
 ```tsx
-// WRONG -- kills reactivity
-const MyComponent = ({ name, count }) => {
-  return <div>{name}: {count}</div>;
-};
+// WRONG -- reads once, never updates
+const Comp = ({ name }) => <div>{name}</div>;
 
-// CORRECT -- preserves reactivity
-const MyComponent = (props) => {
-  return <div>{props.name}: {props.count}</div>;
-};
+// CORRECT
+const Comp = (props) => <div>{props.name}</div>;
 ```
 
-Use `mergeProps` for defaults:
+`mergeProps` for defaults, `splitProps` to separate groups:
+
 ```tsx
 const merged = mergeProps({ color: "blue" }, props);
-```
-
-Use `splitProps` to separate prop groups:
-```tsx
 const [local, others] = splitProps(props, ["class", "style"]);
 ```
 
-## Store Patterns
+## Stores
 
-`createStore` provides deep reactivity for complex nested state.
+`createStore` for deep nested state with path-based updates:
+
 ```tsx
-const [state, setState] = createStore({
-  user: { name: "Alice", settings: { theme: "dark" } }
-});
-
-// Granular updates with path syntax
+const [state, setState] = createStore({ user: { settings: { theme: "dark" } } });
 setState("user", "settings", "theme", "light");
-
-// Array mutations
 setState("items", items => [...items, newItem]);
-setState("items", idx, "done", true);
 ```
 
 ## Anti-Patterns
 
-1. **Destructuring props** -- Breaks reactivity. Always use `props.x`.
-2. **Unnecessary createEffect** -- If you just need a derived value, use `createMemo` instead.
-3. **Treating it like React** -- Components do NOT re-run. There is no re-render cycle. Only reactive expressions update.
-4. **Using array index as key in For** -- `<For>` is keyed by reference automatically; do not add manual key props.
-5. **Reading signals outside reactive context** -- Reading `count()` at component top level captures the value once. Wrap in JSX expressions or effects to stay reactive.
-6. **Forgetting to call signals** -- `count` is a getter function, `count()` is the value. Always call it.
+1. **Destructuring props** -- Breaks reactivity. Always `props.x`.
+2. **createEffect for derived values** -- Use `createMemo` instead.
+3. **Treating it like React** -- No re-render cycle. Only reactive expressions update.
+4. **Manual keys in For** -- `<For>` is keyed by reference automatically.
+5. **Signals outside reactive context** -- `count()` at top level captures once. Wrap in JSX or effects.
+6. **Forgetting to call signals** -- `count` is a getter, `count()` is the value.
