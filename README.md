@@ -102,6 +102,10 @@ claude-toolkit.config.ts  # tracked — your project's Claude config
 CLAUDE.md                 # tracked — project-specific documentation
 ```
 
+## Documentation
+
+Full reference documentation for all skills, commands, and agents is available in the [`docs/`](docs/README.md) directory.
+
 ## Development
 
 ```bash
