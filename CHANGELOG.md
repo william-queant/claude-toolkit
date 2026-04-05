@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.17 (2026-04-05)
+
+- feat: add storybook stack with interaction testing and visual regression
+
 ## 0.1.16 (2026-04-05)
 
 - feat: add playwright stack with E2E testing, Page Objects, and CI/CD

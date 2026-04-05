@@ -1,0 +1,46 @@
+{
+	"name": "ct-storybook-patterns",
+	"description": "Storybook interaction testing, CSF 3 stories, and visual regression for SolidJS",
+	"defaultMappings": {
+		".storybook": "ct-storybook-patterns",
+		"src/**/*.stories.tsx": "ct-storybook-patterns"
+	},
+	"fileExtensions": ["stories.tsx", "stories.ts"],
+	"skillRules": {
+		"ct-storybook-patterns": {
+			"description": "Storybook CSF 3 stories, play functions, a11y testing, and visual regression",
+			"priority": 7,
+			"triggers": {
+				"keywords": [
+					"storybook",
+					"story",
+					"stories",
+					"csf",
+					"play function",
+					"interaction test",
+					"visual regression",
+					"chromatic"
+				],
+				"keywordPatterns": ["\\bstorybook\\b", "\\bstories\\b", "\\bplay\\s+function\\b"],
+				"pathPatterns": ["**/*.stories.tsx", "**/*.stories.ts", "**/.storybook/**"],
+				"intentPatterns": [
+					"(?:create|write|add).*(?:story|stories|storybook)",
+					"(?:interaction|visual|a11y).*(?:test|testing)"
+				],
+				"contentPatterns": [
+					"satisfies Meta",
+					"StoryObj",
+					"@storybook/test",
+					"createJSXDecorator",
+					"storybook-solidjs"
+				]
+			},
+			"relatedSkills": [
+				"ct-solidjs-patterns",
+				"ct-testing-patterns",
+				"ct-vite-vitest-patterns",
+				"ct-playwright-patterns"
+			]
+		}
+	}
+}
