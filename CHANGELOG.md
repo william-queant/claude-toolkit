@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.13 (2026-04-05)
+
+- docs: add testing best practices for vitest, playwright, and storybook
+
 ## 0.1.12 (2026-04-05)
 
 - docs: update skills and docs to 2026 best practices
