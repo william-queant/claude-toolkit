@@ -3,7 +3,7 @@
 > Cloudflare D1 SQL database and KV cache patterns.
 
 **Type:** Stack Skill (requires `cloudflare` stack)
-**Source:** [`stacks/cloudflare/skills/cloudflare-d1-kv/SKILL.md`](../stacks/cloudflare/skills/cloudflare-d1-kv/SKILL.md)
+**Source:** [`stacks/cloudflare/skills/ct-cloudflare-d1-kv/SKILL.md`](../stacks/cloudflare/skills/ct-cloudflare-d1-kv/SKILL.md)
 **Directory Mappings:** `src/db/`, `migrations/`
 **File Extensions:** `.sql`
 

@@ -3,7 +3,7 @@
 > Typesafe-i18n internationalization patterns for SolidJS.
 
 **Type:** Stack Skill (requires `i18n-typesafe` stack)
-**Source:** [`stacks/i18n-typesafe/skills/i18n-typesafe/SKILL.md`](../stacks/i18n-typesafe/skills/i18n-typesafe/SKILL.md)
+**Source:** [`stacks/i18n-typesafe/skills/ct-i18n-typesafe/SKILL.md`](../stacks/i18n-typesafe/skills/ct-i18n-typesafe/SKILL.md)
 **Directory Mappings:** `src/locales/`, `src/i18n/`
 
 ## Overview

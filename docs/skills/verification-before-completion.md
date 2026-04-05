@@ -3,7 +3,7 @@
 > Evidence-based completion claims -- never say "done" without proof that the work is correct.
 
 **Type:** Core Skill (always included)
-**Source:** [`core/skills/verification-before-completion/SKILL.md`](../core/skills/verification-before-completion/SKILL.md)
+**Source:** [`core/skills/ct-verification-before-completion/SKILL.md`](../core/skills/ct-verification-before-completion/SKILL.md)
 
 ## Overview
 

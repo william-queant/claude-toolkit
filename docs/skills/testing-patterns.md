@@ -3,7 +3,7 @@
 > Generic test-driven development practices and patterns applicable to any language or test framework.
 
 **Type:** Core Skill (always included)
-**Source:** [`core/skills/testing-patterns/SKILL.md`](../core/skills/testing-patterns/SKILL.md)
+**Source:** [`core/skills/ct-testing-patterns/SKILL.md`](../core/skills/ct-testing-patterns/SKILL.md)
 
 ## Overview
 

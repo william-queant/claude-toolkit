@@ -3,7 +3,7 @@
 > Four-phase methodology for diagnosing and fixing bugs efficiently without guesswork.
 
 **Type:** Core Skill (always included)
-**Source:** [`core/skills/systematic-debugging/SKILL.md`](../core/skills/systematic-debugging/SKILL.md)
+**Source:** [`core/skills/ct-systematic-debugging/SKILL.md`](../core/skills/ct-systematic-debugging/SKILL.md)
 
 ## Overview
 

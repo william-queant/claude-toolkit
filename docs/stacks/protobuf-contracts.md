@@ -3,7 +3,7 @@
 > Protocol Buffer definitions and code generation for frontend/backend contracts.
 
 **Type:** Stack Skill (requires `protobuf` stack)
-**Source:** [`stacks/protobuf/skills/protobuf-contracts/SKILL.md`](../stacks/protobuf/skills/protobuf-contracts/SKILL.md)
+**Source:** [`stacks/protobuf/skills/ct-protobuf-contracts/SKILL.md`](../stacks/protobuf/skills/ct-protobuf-contracts/SKILL.md)
 **Directory Mappings:** `proto/`
 **File Extensions:** `.proto`
 

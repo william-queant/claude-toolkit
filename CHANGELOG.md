@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.11 (2026-04-05)
+
+- refactor: rename skill folders to match ct- prefixed skill names
+
 ## 0.1.10 (2026-04-05)
 
 - chore: update typescript to ^6.0.2 and require bun >=1.3.0

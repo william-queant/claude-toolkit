@@ -3,7 +3,7 @@
 > Rust WASM patterns for Cloudflare Workers with worker-rs.
 
 **Type:** Stack Skill (requires `rust-wasm` stack)
-**Source:** [`stacks/rust-wasm/skills/rust-wasm-patterns/SKILL.md`](../stacks/rust-wasm/skills/rust-wasm-patterns/SKILL.md)
+**Source:** [`stacks/rust-wasm/skills/ct-rust-wasm-patterns/SKILL.md`](../stacks/rust-wasm/skills/ct-rust-wasm-patterns/SKILL.md)
 **Directory Mappings:** `worker/`, `worker/src/`
 **File Extensions:** `.rs`, `.toml`
 

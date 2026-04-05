@@ -3,7 +3,7 @@
 > Strict TypeScript patterns for type safety, readability, and maintainable codebases.
 
 **Type:** Core Skill (always included)
-**Source:** [`core/skills/typescript-conventions/SKILL.md`](../core/skills/typescript-conventions/SKILL.md)
+**Source:** [`core/skills/ct-typescript-conventions/SKILL.md`](../core/skills/ct-typescript-conventions/SKILL.md)
 
 ## Overview
 

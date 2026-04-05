@@ -3,7 +3,7 @@
 > SolidJS reactivity, signals, effects, and component patterns.
 
 **Type:** Stack Skill (requires `solidjs` stack)
-**Source:** [`stacks/solidjs/skills/solidjs-patterns/SKILL.md`](../stacks/solidjs/skills/solidjs-patterns/SKILL.md)
+**Source:** [`stacks/solidjs/skills/ct-solidjs-patterns/SKILL.md`](../stacks/solidjs/skills/ct-solidjs-patterns/SKILL.md)
 **Directory Mappings:** `src/components/`, `src/hooks/`, `src/pages/`
 **File Extensions:** `.tsx`, `.jsx`
 

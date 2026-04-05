@@ -3,7 +3,7 @@
 > Type-safe CSS with vanilla-extract, sprinkles, and recipes.
 
 **Type:** Stack Skill (requires `vanilla-extract` stack)
-**Source:** [`stacks/vanilla-extract/skills/vanilla-extract-patterns/SKILL.md`](../stacks/vanilla-extract/skills/vanilla-extract-patterns/SKILL.md)
+**Source:** [`stacks/vanilla-extract/skills/ct-vanilla-extract-patterns/SKILL.md`](../stacks/vanilla-extract/skills/ct-vanilla-extract-patterns/SKILL.md)
 **Directory Mappings:** `src/styles/`, `src/theme/`
 **File Extensions:** `.css.ts`
 
