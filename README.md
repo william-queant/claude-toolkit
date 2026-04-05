@@ -50,11 +50,14 @@ export default defineConfig({
 | Stack | Skills Added |
 |-------|-------------|
 | `solidjs` | SolidJS reactivity, signals, components |
+| `vite` | Vite build config, plugins, Vitest testing, coverage, browser mode |
 | `vanilla-extract` | Type-safe CSS, sprinkles, recipes, themes |
 | `rust-wasm` | Rust WASM for Cloudflare Workers |
 | `protobuf` | Protocol Buffers, code generation, contracts |
 | `cloudflare` | D1 database, KV cache, Wrangler |
 | `i18n-typesafe` | typesafe-i18n internationalization |
+| `playwright` | Playwright E2E testing, Page Objects, fixtures, CI/CD |
+| `storybook` | Storybook interaction testing, CSF 3, visual regression |
 
 ## Core Features (always included)
 

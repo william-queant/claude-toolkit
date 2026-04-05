@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.18 (2026-04-05)
+
+- docs: update cross-references for vite, playwright, and storybook stacks
+
 ## 0.1.17 (2026-04-05)
 
 - feat: add storybook stack with interaction testing and visual regression

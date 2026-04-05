@@ -42,8 +42,11 @@ Stack-specific skills activated based on your `claude-toolkit.config.ts` configu
 | Skill                                                          | Stack             | Description                                                                    |
 | -------------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------ |
 | [ct-solidjs-patterns](stacks/solidjs-patterns.md)                 | `solidjs`         | Reactivity, signals, effects, component patterns, and props handling           |
+| [ct-vite-vitest-patterns](stacks/vite-vitest-patterns.md)         | `vite`            | Vite build config, plugins, env vars, Vitest testing, coverage, browser mode   |
 | [ct-vanilla-extract-patterns](stacks/vanilla-extract-patterns.md) | `vanilla-extract` | Type-safe CSS with zero runtime: styles, recipes, themes, sprinkles            |
 | [ct-rust-wasm-patterns](stacks/rust-wasm-patterns.md)             | `rust-wasm`       | Rust WASM for Cloudflare Workers: routing, handlers, env bindings              |
 | [ct-protobuf-contracts](stacks/protobuf-contracts.md)             | `protobuf`        | Protocol Buffers for API contracts: schema design, versioning, code generation |
 | [ct-cloudflare-d1-kv](stacks/cloudflare-d1-kv.md)                 | `cloudflare`      | D1 database and KV cache: queries, migrations, caching patterns                |
 | [ct-i18n-typesafe](stacks/i18n-typesafe.md)                       | `i18n-typesafe`   | Type-safe internationalization with compile-time key checking                  |
+| [ct-playwright-patterns](stacks/playwright-patterns.md)           | `playwright`      | E2E testing with Page Objects, fixtures, auth, network mocking, CI/CD          |
+| [ct-storybook-patterns](stacks/storybook-patterns.md)             | `storybook`       | Interaction testing, CSF 3, play functions, a11y, visual regression            |

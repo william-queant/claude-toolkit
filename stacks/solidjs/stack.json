@@ -46,7 +46,13 @@
 					"<Switch"
 				]
 			},
-			"relatedSkills": ["ct-vanilla-extract-patterns", "ct-testing-patterns"]
+			"relatedSkills": [
+				"ct-vanilla-extract-patterns",
+				"ct-testing-patterns",
+				"ct-vite-vitest-patterns",
+				"ct-storybook-patterns",
+				"ct-playwright-patterns"
+			]
 		}
 	}
 }
