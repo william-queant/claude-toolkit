@@ -31,12 +31,22 @@ Do not assume edge cases work because the happy path works.
 - Verify consumers of changed APIs/schemas still work.
 - Smoke test the running application if applicable.
 
+## Security Check
+
+Before completing work that touches dependencies, inputs, or external data:
+
+- **Dependency audit** -- Run `bun audit` or `npm audit` and resolve critical/high vulnerabilities.
+- **Input validation** -- Verify user-facing inputs are validated at system boundaries (no SQL injection, XSS, command injection).
+- **Secret exposure** -- Confirm no secrets, API keys, or credentials in committed code or logs.
+
 ## Evidence Format
 
 ```
 ## Completed: [task name]
 - Tests: X passing (Y new, Z existing) -- [command output]
 - Types: tsc --noEmit: 0 errors
+- Lint: 0 violations
+- Security: audit clean, no exposed secrets
 - Manual: [endpoint/action]: [status/result]
 - Edge cases: [what was verified]
 ```

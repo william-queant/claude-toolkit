@@ -74,6 +74,28 @@ Colon-separated hierarchical: `user:{id}`, `user:{id}:profile`, `cache:feed:{uid
 | Config | 5min | Needs fast propagation |
 | Public listings | 15min | Freshness vs load balance |
 
+## Hyperdrive (External Database Acceleration)
+
+Hyperdrive accelerates connections to external PostgreSQL/MySQL databases from Workers by maintaining regional connection pools. Use it when D1 is insufficient and you need a full relational database.
+
+```toml
+# wrangler.toml
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "<hyperdrive-config-id>"
+```
+
+```typescript
+const sql = env.HYPERDRIVE.connectionString;
+// Pass to your Postgres/MySQL client (e.g., node-postgres, drizzle)
+```
+
+Key points:
+- Eliminates per-request TCP/TLS handshake overhead.
+- Caches common read queries automatically.
+- Always use Hyperdrive for external database connections from Workers.
+- Connection pool size is configurable per Hyperdrive config.
+
 ## Anti-Patterns
 
 1. **Unbounded queries** -- Always LIMIT. D1 has 5MB response cap.

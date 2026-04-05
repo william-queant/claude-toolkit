@@ -98,6 +98,40 @@ cache:feed:{userId}:page:{pageNum}
 
 Invalidate on write operations by deleting the corresponding cache key after updating D1.
 
+## Hyperdrive (External Database Acceleration)
+
+Hyperdrive accelerates connections to external PostgreSQL/MySQL databases from Workers by maintaining regional connection pools close to your database, eliminating per-request TCP/TLS handshake overhead.
+
+### Setup
+
+```toml
+# wrangler.toml
+[[hyperdrive]]
+binding = "HYPERDRIVE"
+id = "<hyperdrive-config-id>"
+```
+
+```typescript
+// Access the connection string in your Worker
+const sql = env.HYPERDRIVE.connectionString;
+// Pass to your Postgres/MySQL client (e.g., node-postgres, drizzle)
+```
+
+### When to Use
+
+| Scenario | Use |
+|---|---|
+| Simple data, edge-native | **D1** (serverless SQLite) |
+| Read-heavy caching layer | **KV** (eventually consistent) |
+| Full relational DB (Postgres/MySQL) | **Hyperdrive** + external DB |
+
+### Key Points
+
+- Always use Hyperdrive when connecting to external databases from Workers
+- Caches common read queries automatically, reducing origin load
+- Connection pool size is configurable per Hyperdrive config (minimum 5 connections)
+- Understands read vs write queries for intelligent caching
+
 ## Anti-patterns
 
 | Anti-pattern | Why it's wrong |

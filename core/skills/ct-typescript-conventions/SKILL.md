@@ -40,6 +40,47 @@ type AsyncState<T> =
   | { status: "error"; error: Error };
 ```
 
+## `satisfies` Operator
+
+Validate a value matches a type without widening it. Preserves the narrowest inferred type while ensuring conformance.
+
+```typescript
+type Route = { path: string; children?: Route[] };
+
+const routes = {
+  home: { path: "/" },
+  user: { path: "/user/:id", children: [{ path: "settings" }] },
+} satisfies Record<string, Route>;
+
+// routes.home.path is still "/" (literal), not string
+```
+
+## `const` Type Parameters
+
+Infer literal types from arguments without requiring callers to write `as const`:
+
+```typescript
+function createConfig<const T extends readonly string[]>(names: T): Record<T[number], boolean> {
+  return Object.fromEntries(names.map(n => [n, false])) as Record<T[number], boolean>;
+}
+
+// result type: Record<"debug" | "verbose", boolean> -- not Record<string, boolean>
+const flags = createConfig(["debug", "verbose"]);
+```
+
+## Template Literal Types
+
+Build precise string types from unions:
+
+```typescript
+type EventName = "click" | "focus" | "blur";
+type Handler = `on${Capitalize<EventName>}`; // "onClick" | "onFocus" | "onBlur"
+
+type Locale = "en" | "fr" | "ja";
+type Currency = "USD" | "EUR" | "JPY";
+type PriceKey = `price:${Locale}:${Currency}`; // 9 valid combinations
+```
+
 ## Generic Constraints
 
 ```typescript

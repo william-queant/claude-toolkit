@@ -88,7 +88,7 @@ Use `#[derive(Serialize, Deserialize)]` for request/response types. Parse reques
 crate-type = ["cdylib"]
 
 [dependencies]
-worker = "0.4"
+worker = "0.5"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 console_error_panic_hook = "0.1"

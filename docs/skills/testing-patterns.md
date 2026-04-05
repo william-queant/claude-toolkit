@@ -71,6 +71,35 @@ const admin = getMockUser({ role: "admin" });
 
 The ratio should be roughly pyramid-shaped: many unit tests, some integration tests, few E2E tests.
 
+## Property-Based Testing
+
+When a function has a contract ("for all valid inputs X, property Y holds"), use property-based tests to verify across generated inputs instead of hand-picked examples:
+
+```typescript
+// Instead of testing 3-4 specific inputs:
+test("sort is idempotent", () => {
+  fc.assert(fc.property(fc.array(fc.integer()), (arr) => {
+    const sorted = mySort(arr);
+    expect(mySort(sorted)).toEqual(sorted);
+  }));
+});
+```
+
+Good candidates: serialization round-trips, math properties, parsers, encoding/decoding, sorting invariants.
+
+## Bun Test Runner
+
+Bun includes a built-in test runner with no additional dependencies:
+
+```bash
+bun test                       # run all *.test.ts files
+bun test --watch               # re-run on changes
+bun test --coverage            # with code coverage
+bun test path/to/file.test.ts  # single file
+```
+
+Supports `describe`, `it`/`test`, `expect`, lifecycle hooks, and snapshot testing out of the box.
+
 ## Anti-patterns
 
 | Anti-pattern | Description |

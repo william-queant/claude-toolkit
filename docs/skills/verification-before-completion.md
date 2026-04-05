@@ -46,7 +46,15 @@ Test boundaries and unusual inputs explicitly:
 - **Concurrent access** -- simultaneous requests or operations
 - **Error paths** -- network failures, database errors, permission denied
 
-### 6. Regression Check
+### 6. Security Check
+
+Before completing work that touches dependencies, inputs, or external data:
+
+- **Dependency audit** -- Run `bun audit` or `npm audit` and resolve critical/high vulnerabilities
+- **Input validation** -- Verify user-facing inputs are validated at system boundaries (no SQL injection, XSS, command injection)
+- **Secret exposure** -- Confirm no secrets, API keys, or credentials in committed code or logs
+
+### 7. Regression Check
 
 - Run related tests, not just the tests you wrote
 - Check integration points if you changed a shared utility, API contract, or database schema
@@ -65,6 +73,10 @@ When reporting completion, include concrete evidence:
 
 ### Type check
 - `tsc --noEmit`: 0 errors
+
+### Security
+- `bun audit`: 0 vulnerabilities
+- No secrets in committed files
 
 ### Manual verification
 - POST /api/auth/login with valid credentials: 200 + JWT token

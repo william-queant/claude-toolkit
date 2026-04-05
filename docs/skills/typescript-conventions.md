@@ -94,6 +94,47 @@ type AsyncState<T> =
   | { status: "error"; error: Error };
 ```
 
+### `satisfies` Operator
+
+Validate a value conforms to a type without widening its inferred type:
+
+```typescript
+type Route = { path: string; children?: Route[] };
+
+const routes = {
+  home: { path: "/" },
+  user: { path: "/user/:id", children: [{ path: "settings" }] },
+} satisfies Record<string, Route>;
+
+// routes.home.path is "/" (literal), not string
+```
+
+### `const` Type Parameters
+
+Infer literal types from arguments without requiring callers to write `as const`:
+
+```typescript
+function createConfig<const T extends readonly string[]>(names: T): Record<T[number], boolean> {
+  return Object.fromEntries(names.map(n => [n, false])) as Record<T[number], boolean>;
+}
+
+// result: Record<"debug" | "verbose", boolean>
+const flags = createConfig(["debug", "verbose"]);
+```
+
+### Template Literal Types
+
+Build precise string types from unions:
+
+```typescript
+type EventName = "click" | "focus" | "blur";
+type Handler = `on${Capitalize<EventName>}`; // "onClick" | "onFocus" | "onBlur"
+
+type Locale = "en" | "fr" | "ja";
+type Currency = "USD" | "EUR" | "JPY";
+type PriceKey = `price:${Locale}:${Currency}`; // 9 valid combinations
+```
+
 ### Generic Constraints
 
 Use `extends` to constrain generics, documenting expectations and catching misuse:

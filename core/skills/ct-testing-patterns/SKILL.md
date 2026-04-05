@@ -38,6 +38,35 @@ New required fields update the factory once, not every test.
 - Keep mocks minimal -- only methods your code calls. Reset between tests.
 - Verify mocks match the real API. Update when APIs change.
 
+## Property-Based Testing
+
+When a function has a contract ("for all valid inputs X, property Y holds"), use property-based tests to verify it across generated inputs instead of hand-picked examples:
+
+```
+// Instead of testing 3-4 specific inputs:
+test("sort is idempotent", () => {
+  fc.assert(fc.property(fc.array(fc.integer()), (arr) => {
+    const sorted = mySort(arr);
+    expect(mySort(sorted)).toEqual(sorted);
+  }));
+});
+```
+
+Good candidates: serialization round-trips, math properties, parsers, encoding/decoding, sorting invariants.
+
+## Bun Test Runner
+
+Bun includes a built-in test runner. Use `bun test` for projects on the Bun runtime:
+
+```
+bun test                    # run all *.test.ts files
+bun test --watch            # re-run on changes
+bun test --coverage         # with code coverage
+bun test path/to/file.test.ts  # single file
+```
+
+Bun supports `describe`, `it`/`test`, `expect`, lifecycle hooks, and snapshot testing out of the box with no additional dependencies.
+
 ## Test Pyramid
 
 Many unit tests (fast, focused) > some integration tests (multi-component) > few E2E tests (full flow).
