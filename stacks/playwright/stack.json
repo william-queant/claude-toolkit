@@ -1,0 +1,39 @@
+{
+	"name": "ct-playwright-patterns",
+	"description": "Playwright E2E testing patterns with Page Objects, fixtures, and CI/CD",
+	"defaultMappings": {
+		"e2e": "ct-playwright-patterns",
+		"playwright.config.ts": "ct-playwright-patterns"
+	},
+	"fileExtensions": ["spec.ts"],
+	"skillRules": {
+		"ct-playwright-patterns": {
+			"description": "Playwright E2E testing with Page Objects, fixtures, auth, and network mocking",
+			"priority": 7,
+			"triggers": {
+				"keywords": [
+					"playwright",
+					"e2e",
+					"end-to-end",
+					"page object",
+					"browser test",
+					"storageState"
+				],
+				"keywordPatterns": ["\\bplaywright\\b", "\\be2e\\b", "\\bpage\\s*object\\b"],
+				"pathPatterns": ["**/e2e/**", "**/*.spec.ts", "**/playwright.config.*"],
+				"intentPatterns": [
+					"(?:create|write|add).*(?:e2e|end.to.end|playwright).*(?:test)",
+					"(?:page object|fixture|browser test)"
+				],
+				"contentPatterns": [
+					"@playwright/test",
+					"page.goto",
+					"page.getByRole",
+					"storageState",
+					"base.extend"
+				]
+			},
+			"relatedSkills": ["ct-storybook-patterns", "ct-testing-patterns", "ct-vite-vitest-patterns"]
+		}
+	}
+}

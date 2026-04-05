@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.16 (2026-04-05)
+
+- feat: add playwright stack with E2E testing, Page Objects, and CI/CD
+
 ## 0.1.15 (2026-04-05)
 
 - feat: add vite stack with Vitest testing, coverage, and browser mode
