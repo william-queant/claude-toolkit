@@ -11,6 +11,35 @@ description: Generic test-driven development practices and patterns applicable t
 2. **Green** -- Minimal code to pass. No optimization yet.
 3. **Refactor** -- Clean up while keeping tests green. Commit at each stage.
 
+## 3-Layer Testing Strategy
+
+```
+          /  E2E  \           Real browsers, full user flows
+         /----------\
+        / Interaction \       Component sandbox, behavior, a11y
+       /----------------\
+      /      Unit        \    Pure logic, signals, utilities
+     /--------------------\
+```
+
+| Layer       | Target Ratio | What to Cover                                                                |
+| ----------- | ------------ | ---------------------------------------------------------------------------- |
+| Unit        | ~70%         | Business logic, utilities, data transforms, reactive primitives, error paths |
+| Interaction | ~20%         | Component variants, user interactions, accessibility, visual regression      |
+| E2E         | ~10%         | Critical user journeys, authentication flows, cross-page workflows           |
+
+### When to Use Which Layer
+
+| Question                                          | Layer                                  |
+| ------------------------------------------------- | -------------------------------------- |
+| Does this logic need a DOM?                        | **Unit** if no, **Interaction** if yes |
+| Does it involve multiple pages or navigation?      | **E2E**                                |
+| Am I testing a single component's visual states?   | **Interaction**                        |
+| Am I testing a reactive primitive (signal, memo)?  | **Unit**                               |
+| Does it require authentication or real network?    | **E2E**                                |
+| Am I testing component accessibility?              | **Interaction** (axe-core)             |
+| Does it need the full server running?              | **E2E**                                |
+
 ## Test Behavior, Not Implementation
 
 Test *what* code does (public interface, observable outputs), not *how* (internal state, call counts). Implementation-coupled tests break on every refactor.
@@ -30,6 +59,13 @@ New required fields update the factory once, not every test.
 
 - Co-locate tests or mirror source structure. One test file per module (`module.test.ext`).
 - Group with `describe`, name as sentences: `it("rejects expired tokens")`.
+
+## Shared Principles
+
+- **Prefer role-based queries.** Use `getByRole`, `getByLabel`, `getByText` over test IDs or CSS selectors.
+- **Never sleep.** Use framework-provided waiting mechanisms (`waitFor`, `findBy*`, web-first assertions).
+- **One assertion focus per test.** Multiple assertions are fine if they verify facets of the same behavior.
+- **Isolate tests.** No test should depend on another test's side effects. Reset state between tests.
 
 ## Mocking Rules
 
@@ -69,7 +105,7 @@ Bun supports `describe`, `it`/`test`, `expect`, lifecycle hooks, and snapshot te
 
 ## Test Pyramid
 
-Many unit tests (fast, focused) > some integration tests (multi-component) > few E2E tests (full flow).
+See 3-Layer Testing Strategy above. Many unit tests (fast, focused) > some interaction tests (component sandbox) > few E2E tests (full flow). Aim for 70/20/10 distribution.
 
 ## Anti-Patterns
 
