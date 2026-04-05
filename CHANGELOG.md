@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.15 (2026-04-05)
+
+- feat: add vite stack with Vitest testing, coverage, and browser mode
+
 ## 0.1.14 (2026-04-05)
 
 - docs: add 3-layer testing strategy and shared principles to testing patterns

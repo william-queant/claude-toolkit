@@ -1,0 +1,66 @@
+{
+	"name": "ct-vite-vitest-patterns",
+	"description": "Vite build tooling and Vitest unit/integration testing patterns",
+	"defaultMappings": {
+		"vite.config.ts": "ct-vite-vitest-patterns",
+		"vitest.config.ts": "ct-vite-vitest-patterns",
+		"src/**/*.test.ts": "ct-vite-vitest-patterns",
+		"src/**/*.test.tsx": "ct-vite-vitest-patterns",
+		"tests": "ct-vite-vitest-patterns"
+	},
+	"fileExtensions": ["test.ts", "test.tsx", "spec.ts", "spec.tsx"],
+	"skillRules": {
+		"ct-vite-vitest-patterns": {
+			"description": "Vite build config, plugins, env vars, and Vitest testing with mocking, coverage, browser mode, and workspace",
+			"priority": 7,
+			"triggers": {
+				"keywords": [
+					"vite",
+					"vitest",
+					"vi.fn",
+					"vi.mock",
+					"vi.spyOn",
+					"defineConfig",
+					"coverage",
+					"snapshot",
+					"in-source test",
+					"browser mode"
+				],
+				"keywordPatterns": [
+					"\\bvite\\b",
+					"\\bvitest\\b",
+					"\\bvi\\.fn\\b",
+					"\\bvi\\.mock\\b",
+					"\\bvi\\.spyOn\\b"
+				],
+				"pathPatterns": [
+					"**/vite.config.*",
+					"**/vitest.config.*",
+					"**/*.test.ts",
+					"**/*.test.tsx",
+					"**/*.spec.ts",
+					"**/*.spec.tsx",
+					"**/tests/**"
+				],
+				"intentPatterns": [
+					"(?:create|write|add|run).*(?:test|spec|vitest)",
+					"(?:configure|setup).*(?:vite|vitest|coverage)",
+					"(?:mock|spy|stub).*(?:function|module|timer)"
+				],
+				"contentPatterns": [
+					"vitest/config",
+					"vi.fn(",
+					"vi.mock(",
+					"vi.spyOn(",
+					"vi.useFakeTimers",
+					"toMatchSnapshot",
+					"toMatchInlineSnapshot",
+					"import.meta.vitest",
+					"@vitest/coverage",
+					"@vitest/browser"
+				]
+			},
+			"relatedSkills": ["ct-testing-patterns", "ct-storybook-patterns", "ct-playwright-patterns"]
+		}
+	}
+}
