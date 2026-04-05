@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.10 (2026-04-05)
+
+- chore: update typescript to ^6.0.2 and require bun >=1.3.0
+
 ## 0.1.9 (2026-04-04)
 
 - docs: add Zod/Valibot runtime validation section to SolidJS data fetching
