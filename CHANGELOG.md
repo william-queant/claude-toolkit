@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.19 (2026-04-06)
+
+- fix: update storybook addon-vitest config for Vitest 4 compatibility
+
 ## 0.1.18 (2026-04-05)
 
 - docs: update cross-references for vite, playwright, and storybook stacks
