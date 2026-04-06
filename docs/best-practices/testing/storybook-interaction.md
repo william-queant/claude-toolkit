@@ -149,23 +149,33 @@ The **Vitest addon** (`@storybook/addon-vitest`) replaces the old `@storybook/te
 
 ### Configuration (Vitest 4.x)
 
-Use a separate test project:
+Required dependencies: `@storybook/addon-vitest`, `@vitest/browser`, `@vitest/browser-playwright`, `@vitest/coverage-v8`.
+
+Add as an inline project in your main Vite config using `test.projects`:
 
 ```typescript
-// vitest.config.storybook.ts
-import { defineConfig } from "vitest/config";
+// vite.config.ts
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
+import { playwright } from "@vitest/browser-playwright";
 
 export default defineConfig({
-  plugins: [storybookTest()],
+  plugins: [/* ...app plugins */],
   test: {
-    name: "storybook",
-    browser: {
-      enabled: true,
-      provider: "playwright",
-      instances: [{ browser: "chromium" }],
-    },
-    setupFiles: [".storybook/vitest.setup.ts"],
+    projects: [
+      {
+        extends: true,
+        test: { name: "unit", environment: "jsdom", setupFiles: ["./tests/setup.ts"] },
+      },
+      {
+        extends: true,
+        plugins: [storybookTest({ configDir: ".storybook" })],
+        test: {
+          name: "storybook",
+          browser: { enabled: true, headless: true, provider: playwright(), instances: [{ browser: "chromium" }] },
+          setupFiles: [".storybook/vitest.setup.ts"],
+        },
+      },
+    ],
   },
 });
 ```

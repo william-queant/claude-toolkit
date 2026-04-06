@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.20 (2026-04-06)
+
+- docs: update storybook docs with Vitest 4 addon-vitest config
+
 ## 0.1.19 (2026-04-06)
 
 - fix: update storybook addon-vitest config for Vitest 4 compatibility
