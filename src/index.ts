@@ -1,3 +1,5 @@
+export type { DetectedStack } from "./detect.js";
+export { detectStacks } from "./detect.js";
 export type {
 	ClaudeToolkitConfig,
 	GitConfig,

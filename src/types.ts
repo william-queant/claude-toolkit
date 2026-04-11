@@ -6,6 +6,9 @@ export type StackName =
 	| "protobuf"
 	| "cloudflare"
 	| "i18n-typesafe"
+	| "vite"
+	| "playwright"
+	| "storybook"
 	| (string & {});
 
 /** Hook configuration for post-tool-use automation */

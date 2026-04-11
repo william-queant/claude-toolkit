@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.22 (2026-04-11)
+
+- feat: add stack auto-detection with drift reporting
+
 ## 0.1.21 (2026-04-11)
 
 - docs: improve README intro and standardize formatting

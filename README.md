@@ -2,7 +2,7 @@
 
 **claude-toolkit is a toolbox that Claude Code picks up and uses on its own — no prompting required, saving tokens and ensuring consistent behavior across your team.**
 
-You define a `claude-toolkit.config.ts` at your project root, declaring your tech stacks (e.g. `solidjs`, `rust-wasm`, `cloudflare`, `protobuf`, `playwright`, `storybook`) and preferences. The toolkit generates a `.claude/` directory that Claude Code automatically loads. Instead of every team member re-explaining project conventions, tooling, and patterns each session (burning tokens every time), Claude already knows — the knowledge is baked into the generated config.
+The toolkit auto-detects your tech stacks (SolidJS, Vite, Playwright, Cloudflare, etc.) and generates a `.claude/` directory that Claude Code automatically loads. Instead of every team member re-explaining project conventions, tooling, and patterns each session (burning tokens every time), Claude already knows — the knowledge is baked into the generated config. As your project evolves, the toolkit detects stack drift and suggests config updates to stay in sync.
 
 This means any developer on your team gets the same Claude behavior for a given project, regardless of how they prompt. The toolkit is project-specific but team-consistent: Claude follows the same debugging methodology, the same testing patterns, and the same code quality standards for everyone.
 
@@ -50,6 +50,34 @@ export default defineConfig({
 | `bunx claude-toolkit init` | Scaffold config file and generate `.claude/`             |
 | `bunx claude-toolkit sync` | Regenerate `.claude/` from config (after toolkit update) |
 | `bunx claude-toolkit help` | Show available commands                                  |
+
+## Stack Auto-Detection
+
+The toolkit automatically detects which stacks your project uses by scanning `package.json` dependencies, config files, and project structure.
+
+**On `init`** (new project), detected stacks are pre-filled in the generated config:
+
+```text
+Detected stacks:
+  solidjs    — found solid-js in dependencies
+  vite       — found vite.config.ts
+  cloudflare — found wrangler.toml
+
+Created claude-toolkit.config.ts
+```
+
+**On `sync`** (existing config), the toolkit compares your configured stacks against what it detects and reports any drift:
+
+```text
+Stack drift detected:
+  + playwright — found @playwright/test in dependencies (not in config)
+  - rust-wasm  — in config but not detected in project
+
+Suggested update in claude-toolkit.config.ts:
+  stacks: ["solidjs", "vite", "cloudflare", "playwright"]
+```
+
+This keeps your config aligned as your project evolves — stacks you add or remove are surfaced automatically. The suggestion is informational; your config is not modified unless you update it yourself.
 
 ## Available Stacks
 

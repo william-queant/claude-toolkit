@@ -1,6 +1,6 @@
 {
 	"name": "claude-toolkit",
-	"version": "0.1.21",
+	"version": "0.1.22",
 	"description": "Reusable Claude Code configuration toolkit with stack-specific connectors",
 	"type": "module",
 	"bin": {
