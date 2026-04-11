@@ -1,6 +1,12 @@
 # claude-toolkit
 
-Reusable Claude Code configuration toolkit with stack-specific connectors.
+**claude-toolkit is a toolbox that Claude Code picks up and uses on its own — no prompting required, saving tokens and ensuring consistent behavior across your team.**
+
+You define a `claude-toolkit.config.ts` at your project root, declaring your tech stacks (e.g. `solidjs`, `rust-wasm`, `cloudflare`, `protobuf`, `playwright`, `storybook`) and preferences. The toolkit generates a `.claude/` directory that Claude Code automatically loads. Instead of every team member re-explaining project conventions, tooling, and patterns each session (burning tokens every time), Claude already knows — the knowledge is baked into the generated config.
+
+This means any developer on your team gets the same Claude behavior for a given project, regardless of how they prompt. The toolkit is project-specific but team-consistent: Claude follows the same debugging methodology, the same testing patterns, and the same code quality standards for everyone.
+
+Whether you're starting a new project from scratch or consolidating an existing one, the toolkit gives Claude immediate context about your stack and conventions — so it produces code that fits from day one, or aligns with what's already in place.
 
 ## Quick Start
 
@@ -19,45 +25,45 @@ bunx claude-toolkit init
 3. Claude Code picks up the generated config automatically
 
 ```ts
-import { defineConfig } from 'claude-toolkit'
+import { defineConfig } from "claude-toolkit";
 
 export default defineConfig({
-  stacks: ['solidjs', 'rust-wasm', 'cloudflare', 'protobuf'],
-  packageManager: 'bun',
+  stacks: ["solidjs", "rust-wasm", "cloudflare", "protobuf"],
+  packageManager: "bun",
   hooks: {
-    formatter: 'bun run prettier --write',
-    testRunner: 'bun run vitest run',
-    typeCheck: 'bun run tsc --noEmit',
-    extraChecks: ['cargo check --target wasm32-unknown-unknown'],
+    formatter: "bun run prettier --write",
+    testRunner: "bun run vitest run",
+    typeCheck: "bun run tsc --noEmit",
+    extraChecks: ["cargo check --target wasm32-unknown-unknown"],
   },
   git: {
-    branchPrefix: 'wq',
-    protectedBranches: ['main'],
+    branchPrefix: "feat",
+    protectedBranches: ["main"],
   },
-})
+});
 ```
 
 ## CLI Commands
 
-| Command | Description |
-|---------|-------------|
-| `bunx claude-toolkit init` | Scaffold config file and generate `.claude/` |
+| Command                    | Description                                              |
+| -------------------------- | -------------------------------------------------------- |
+| `bunx claude-toolkit init` | Scaffold config file and generate `.claude/`             |
 | `bunx claude-toolkit sync` | Regenerate `.claude/` from config (after toolkit update) |
-| `bunx claude-toolkit help` | Show available commands |
+| `bunx claude-toolkit help` | Show available commands                                  |
 
 ## Available Stacks
 
-| Stack | Skills Added |
-|-------|-------------|
-| `solidjs` | SolidJS reactivity, signals, components |
-| `vite` | Vite build config, plugins, Vitest testing, coverage, browser mode |
-| `vanilla-extract` | Type-safe CSS, sprinkles, recipes, themes |
-| `rust-wasm` | Rust WASM for Cloudflare Workers |
-| `protobuf` | Protocol Buffers, code generation, contracts |
-| `cloudflare` | D1 database, KV cache, Wrangler |
-| `i18n-typesafe` | typesafe-i18n internationalization |
-| `playwright` | Playwright E2E testing, Page Objects, fixtures, CI/CD |
-| `storybook` | Storybook interaction testing, CSF 3, visual regression |
+| Stack             | Skills Added                                                       |
+| ----------------- | ------------------------------------------------------------------ |
+| `solidjs`         | SolidJS reactivity, signals, components                            |
+| `vite`            | Vite build config, plugins, Vitest testing, coverage, browser mode |
+| `vanilla-extract` | Type-safe CSS, sprinkles, recipes, themes                          |
+| `rust-wasm`       | Rust WASM for Cloudflare Workers                                   |
+| `protobuf`        | Protocol Buffers, code generation, contracts                       |
+| `cloudflare`      | D1 database, KV cache, Wrangler                                    |
+| `i18n-typesafe`   | typesafe-i18n internationalization                                 |
+| `playwright`      | Playwright E2E testing, Page Objects, fixtures, CI/CD              |
+| `storybook`       | Storybook interaction testing, CSF 3, visual regression            |
 
 ## Core Features (always included)
 

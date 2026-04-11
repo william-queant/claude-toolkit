@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.21 (2026-04-11)
+
+- docs: improve README intro and standardize formatting
+
 ## 0.1.20 (2026-04-06)
 
 - docs: update storybook docs with Vitest 4 addon-vitest config

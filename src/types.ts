@@ -24,7 +24,7 @@ export interface HookConfig {
 
 /** Git workflow configuration */
 export interface GitConfig {
-	/** Branch name prefix (e.g., "wq" → "wq/feature-name") */
+	/** Branch name prefix (e.g., "feat" → "feat/feature-name") */
 	branchPrefix?: string;
 	/** Branches protected from direct edits */
 	protectedBranches?: string[];
