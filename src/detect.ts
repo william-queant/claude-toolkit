@@ -126,6 +126,18 @@ const DETECTORS: StackDetector[] = [
 			return null;
 		},
 	},
+	{
+		name: "capacitor",
+		detect: (dir, pkg) => {
+			if (hasDep(pkg, "@capgo/capacitor-updater"))
+				return { name: "capacitor", reason: "found @capgo/capacitor-updater in dependencies" };
+			if (hasDep(pkg, "@capacitor/core"))
+				return { name: "capacitor", reason: "found @capacitor/core in dependencies" };
+			const config = rootConfigExists(dir, "capacitor.config");
+			if (config) return { name: "capacitor", reason: `found ${config}` };
+			return null;
+		},
+	},
 ];
 
 /** Scan a project directory and detect which stacks are present */

@@ -50,3 +50,4 @@ Stack-specific skills activated based on your `claude-toolkit.config.ts` configu
 | [ct-i18n-typesafe](stacks/i18n-typesafe.md)                       | `i18n-typesafe`   | Type-safe internationalization with compile-time key checking                  |
 | [ct-playwright-patterns](stacks/playwright-patterns.md)           | `playwright`      | E2E testing with Page Objects, fixtures, auth, network mocking, CI/CD          |
 | [ct-storybook-patterns](stacks/storybook-patterns.md)             | `storybook`       | Interaction testing, CSF 3, play functions, a11y, visual regression            |
+| [ct-capacitor-ota](stacks/capacitor-ota.md)                       | `capacitor`       | Capacitor 8 native runtime and Capgo OTA live updates, channels, encryption    |

@@ -9,6 +9,7 @@ export type StackName =
 	| "vite"
 	| "playwright"
 	| "storybook"
+	| "capacitor"
 	| (string & {});
 
 /** Hook configuration for post-tool-use automation */

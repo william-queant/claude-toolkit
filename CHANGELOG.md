@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.24 (2026-06-01)
+
+- feat: add capacitor stack with Capgo OTA live updates, channels, and encryption
+
 ## 0.1.22 (2026-04-11)
 
 - feat: add stack auto-detection with drift reporting

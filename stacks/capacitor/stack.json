@@ -1,0 +1,64 @@
+{
+	"name": "ct-capacitor-ota",
+	"description": "Capacitor 8 native runtime and Capgo OTA live updates: channels, encryption, staged rollouts",
+	"defaultMappings": {
+		"capacitor.config.ts": "ct-capacitor-ota",
+		"capacitor.config.json": "ct-capacitor-ota",
+		"ios": "ct-capacitor-ota",
+		"android": "ct-capacitor-ota"
+	},
+	"fileExtensions": [],
+	"skillRules": {
+		"ct-capacitor-ota": {
+			"description": "Capacitor 8 live updates with Capgo: notifyAppReady, channels, encryption, CLI, staged rollouts",
+			"priority": 7,
+			"triggers": {
+				"keywords": [
+					"capacitor",
+					"capgo",
+					"ota",
+					"live update",
+					"updater",
+					"notifyAppReady",
+					"channel",
+					"bundle",
+					"hot update",
+					"app store",
+					"setChannel"
+				],
+				"keywordPatterns": [
+					"\\bcapacitor\\b",
+					"\\bcapgo\\b",
+					"\\bota\\b",
+					"\\blive\\s+updates?\\b",
+					"\\bnotifyAppReady\\b"
+				],
+				"pathPatterns": [
+					"**/capacitor.config.ts",
+					"**/capacitor.config.json",
+					"**/capacitor.config.js",
+					"**/android/**",
+					"**/ios/**"
+				],
+				"intentPatterns": [
+					"(?:ship|push|deploy|roll\\s*out).*(?:update|bundle|version)",
+					"(?:setup|configure|add).*(?:capgo|capacitor|live\\s+update|ota)",
+					"(?:rollback|revert).*(?:bundle|channel|update)"
+				],
+				"contentPatterns": [
+					"@capgo/capacitor-updater",
+					"CapacitorUpdater",
+					"notifyAppReady",
+					"setChannel",
+					"@capacitor/core",
+					"autoUpdate"
+				]
+			},
+			"relatedSkills": [
+				"ct-vite-vitest-patterns",
+				"ct-playwright-patterns",
+				"ct-typescript-conventions"
+			]
+		}
+	}
+}
