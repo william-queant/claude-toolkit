@@ -75,9 +75,25 @@ Stack drift detected:
 
 Suggested update in claude-toolkit.config.ts:
   stacks: ["solidjs", "vite", "cloudflare", "playwright"]
+
+Run "claude-toolkit update" to add detected stacks automatically.
 ```
 
-This keeps your config aligned as your project evolves — stacks you add or remove are surfaced automatically. The suggestion is informational; your config is not modified unless you update it yourself.
+`sync` is non-destructive — it reports drift but never edits your config.
+
+**On `update`** (existing config), the toolkit adds any newly detected stacks to your config and regenerates `.claude/` in one step — use this when you add a new stack (e.g. Capacitor) to an existing project:
+
+```text
+Adding newly detected stacks to config:
+  + capacitor — found @capacitor/core in dependencies
+Updated claude-toolkit.config.ts
+Generated .claude/ with 3 stack(s) and 4 core skills
+Update complete.
+```
+
+Stacks already in your config that are no longer detected are reported but left unchanged (remove them manually if intended). If no config exists yet, `update` tells you to run `init` first.
+
+This keeps your config aligned as your project evolves — `init` for first-time setup, `update` to pull in new stacks, `sync` to regenerate from the current config.
 
 ## Available Stacks
 

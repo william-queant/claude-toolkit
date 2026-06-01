@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.25 (2026-06-01)
+
+- feat: add update command to sync detected stacks into existing config
+
 ## 0.1.24 (2026-06-01)
 
 - feat: add capacitor stack with Capgo OTA live updates, channels, and encryption
