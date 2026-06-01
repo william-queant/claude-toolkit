@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import type { StackName } from "./types.js";
 
@@ -11,15 +11,51 @@ export interface DetectedStack {
 interface PackageJson {
 	dependencies?: Record<string, string>;
 	devDependencies?: Record<string, string>;
+	workspaces?: string[] | { packages?: string[] };
+}
+
+/** A directory to inspect for stack markers, with its project-relative label */
+interface ScanRoot {
+	/** Absolute path */
+	dir: string;
+	/** Project-relative path ("." for the project root) */
+	rel: string;
+}
+
+/** Pre-resolved view of the project: every package and directory worth scanning */
+interface DetectContext {
+	projectDir: string;
+	/** Package.json files found at the root and across workspaces/subdirs */
+	packages: { rel: string; pkg: PackageJson }[];
+	/** Directories to check for marker files (root + subdirs + workspace packages) */
+	scanRoots: ScanRoot[];
 }
 
 interface StackDetector {
 	name: StackName;
-	detect: (projectDir: string, pkg: PackageJson | null) => DetectedStack | null;
+	detect: (ctx: DetectContext) => DetectedStack | null;
 }
 
-function loadPackageJson(projectDir: string): PackageJson | null {
-	const pkgPath = join(projectDir, "package.json");
+/** Directories never worth scanning into */
+const IGNORE_DIRS = new Set([
+	"node_modules",
+	"dist",
+	"build",
+	"out",
+	"target",
+	"coverage",
+	".git",
+	".wrangler",
+	".next",
+	".cache",
+	".vercel",
+	".turbo",
+	"playwright-report",
+	"test-results",
+]);
+
+function readPackageJson(dir: string): PackageJson | null {
+	const pkgPath = join(dir, "package.json");
 	if (!existsSync(pkgPath)) return null;
 	try {
 		return JSON.parse(readFileSync(pkgPath, "utf-8")) as PackageJson;
@@ -28,19 +64,112 @@ function loadPackageJson(projectDir: string): PackageJson | null {
 	}
 }
 
-function hasDep(pkg: PackageJson | null, name: string): boolean {
-	if (!pkg) return false;
+/** Immediate, non-ignored subdirectory names of a directory */
+function listSubdirs(dir: string): string[] {
+	try {
+		return readdirSync(dir, { withFileTypes: true })
+			.filter((e) => e.isDirectory() && !IGNORE_DIRS.has(e.name) && !e.name.startsWith("."))
+			.map((e) => e.name);
+	} catch {
+		return [];
+	}
+}
+
+/** Resolve workspace package directories (project-relative) from the root package.json */
+function resolveWorkspaceDirs(projectDir: string, rootPkg: PackageJson | null): string[] {
+	const ws = rootPkg?.workspaces;
+	const patterns = Array.isArray(ws) ? ws : (ws?.packages ?? []);
+	const dirs: string[] = [];
+	for (const pattern of patterns) {
+		if (pattern.includes("*")) {
+			// Resolve a glob like "packages/*" or "apps/*" to concrete package dirs
+			const glob = new Bun.Glob(`${pattern}/package.json`);
+			for (const match of glob.scanSync({ cwd: projectDir, onlyFiles: true })) {
+				dirs.push(match.replace(/[/\\]package\.json$/, "").replace(/\\/g, "/"));
+			}
+		} else {
+			dirs.push(pattern.replace(/\\/g, "/"));
+		}
+	}
+	return dirs;
+}
+
+/** Build the set of directories and package.json files worth inspecting */
+function buildContext(projectDir: string): DetectContext {
+	const rootPkg = readPackageJson(projectDir);
+
+	// Root + immediate subdirs + workspace packages (deduped)
+	const rels = new Set<string>(["."]);
+	for (const name of listSubdirs(projectDir)) rels.add(name);
+	for (const dir of resolveWorkspaceDirs(projectDir, rootPkg)) rels.add(dir);
+
+	const scanRoots: ScanRoot[] = [...rels].map((rel) => ({
+		rel,
+		dir: rel === "." ? projectDir : join(projectDir, rel),
+	}));
+
+	const packages: { rel: string; pkg: PackageJson }[] = [];
+	for (const { rel, dir } of scanRoots) {
+		const pkg = rel === "." ? rootPkg : readPackageJson(dir);
+		if (pkg) packages.push({ rel, pkg });
+	}
+
+	return { projectDir, packages, scanRoots };
+}
+
+function pkgHasDep(pkg: PackageJson, name: string): boolean {
 	return name in (pkg.dependencies ?? {}) || name in (pkg.devDependencies ?? {});
 }
 
-function fileExists(projectDir: string, ...segments: string[]): boolean {
-	return existsSync(join(projectDir, ...segments));
+function pkgLabel(rel: string): string {
+	return rel === "." ? "root package.json" : `${rel}/package.json`;
 }
 
-function rootConfigExists(projectDir: string, prefix: string): string | null {
-	const glob = new Bun.Glob(`${prefix}.*`);
-	for (const match of glob.scanSync({ cwd: projectDir, onlyFiles: true })) {
-		return match;
+function relPath(rel: string, name: string): string {
+	return rel === "." ? name : `${rel}/${name}`;
+}
+
+/** First package (project-relative dir) declaring `name`, or null */
+function findDep(ctx: DetectContext, name: string): string | null {
+	for (const { rel, pkg } of ctx.packages) {
+		if (pkgHasDep(pkg, name)) return rel;
+	}
+	return null;
+}
+
+/** First scan root containing a file/dir named `name` (top-level only), as a project-relative path */
+function findFile(ctx: DetectContext, name: string): string | null {
+	for (const { rel, dir } of ctx.scanRoots) {
+		if (existsSync(join(dir, name))) return relPath(rel, name);
+	}
+	return null;
+}
+
+/** First scan root containing a `${prefix}.*` config file (top-level only) */
+function findConfig(ctx: DetectContext, prefix: string): string | null {
+	for (const { rel, dir } of ctx.scanRoots) {
+		const glob = new Bun.Glob(`${prefix}.*`);
+		for (const match of glob.scanSync({ cwd: dir, onlyFiles: true })) {
+			return relPath(rel, match);
+		}
+	}
+	return null;
+}
+
+/** Look for `*.proto` files directly in scan roots or under a conventional `proto/` dir */
+function findProtoFiles(ctx: DetectContext): string | null {
+	for (const { rel, dir } of ctx.scanRoots) {
+		const direct = new Bun.Glob("*.proto");
+		for (const match of direct.scanSync({ cwd: dir, onlyFiles: true })) {
+			return relPath(rel, match);
+		}
+		const protoDir = join(dir, "proto");
+		if (existsSync(protoDir)) {
+			const nested = new Bun.Glob("**/*.proto");
+			for (const match of nested.scanSync({ cwd: protoDir, onlyFiles: true })) {
+				return relPath(rel, `proto/${match}`);
+			}
+		}
 	}
 	return null;
 }
@@ -48,104 +177,108 @@ function rootConfigExists(projectDir: string, prefix: string): string | null {
 const DETECTORS: StackDetector[] = [
 	{
 		name: "solidjs",
-		detect: (_dir, pkg) =>
-			hasDep(pkg, "solid-js")
-				? { name: "solidjs", reason: "found solid-js in dependencies" }
-				: null,
+		detect: (ctx) => {
+			const at = findDep(ctx, "solid-js");
+			return at ? { name: "solidjs", reason: `found solid-js in ${pkgLabel(at)}` } : null;
+		},
 	},
 	{
 		name: "vite",
-		detect: (dir, pkg) => {
-			if (hasDep(pkg, "vite")) return { name: "vite", reason: "found vite in dependencies" };
-			const viteConfig = rootConfigExists(dir, "vite.config");
-			if (viteConfig) return { name: "vite", reason: `found ${viteConfig}` };
-			const vitestConfig = rootConfigExists(dir, "vitest.config");
-			if (vitestConfig) return { name: "vite", reason: `found ${vitestConfig}` };
-			return null;
+		detect: (ctx) => {
+			const dep = findDep(ctx, "vite");
+			if (dep) return { name: "vite", reason: `found vite in ${pkgLabel(dep)}` };
+			const config = findConfig(ctx, "vite.config") ?? findConfig(ctx, "vitest.config");
+			return config ? { name: "vite", reason: `found ${config}` } : null;
 		},
 	},
 	{
 		name: "vanilla-extract",
-		detect: (_dir, pkg) =>
-			hasDep(pkg, "@vanilla-extract/css")
-				? { name: "vanilla-extract", reason: "found @vanilla-extract/css in dependencies" }
-				: null,
+		detect: (ctx) => {
+			const at = findDep(ctx, "@vanilla-extract/css");
+			return at
+				? { name: "vanilla-extract", reason: `found @vanilla-extract/css in ${pkgLabel(at)}` }
+				: null;
+		},
 	},
 	{
 		name: "rust-wasm",
-		detect: (dir) =>
-			fileExists(dir, "Cargo.toml") ? { name: "rust-wasm", reason: "found Cargo.toml" } : null,
+		detect: (ctx) => {
+			const f = findFile(ctx, "Cargo.toml");
+			return f ? { name: "rust-wasm", reason: `found ${f}` } : null;
+		},
 	},
 	{
 		name: "protobuf",
-		detect: (dir) => {
-			if (fileExists(dir, "buf.yaml")) return { name: "protobuf", reason: "found buf.yaml" };
-			if (fileExists(dir, "buf.gen.yaml"))
-				return { name: "protobuf", reason: "found buf.gen.yaml" };
-			const glob = new Bun.Glob("**/*.proto");
-			for (const _match of glob.scanSync({ cwd: dir, onlyFiles: true })) {
-				return { name: "protobuf", reason: "found .proto files" };
-			}
-			return null;
+		detect: (ctx) => {
+			const buf =
+				findFile(ctx, "buf.yaml") ??
+				findFile(ctx, "buf.gen.yaml") ??
+				findFile(ctx, "buf.work.yaml");
+			if (buf) return { name: "protobuf", reason: `found ${buf}` };
+			const proto = findProtoFiles(ctx);
+			return proto ? { name: "protobuf", reason: `found ${proto}` } : null;
 		},
 	},
 	{
 		name: "cloudflare",
-		detect: (dir) => {
-			if (fileExists(dir, "wrangler.toml"))
-				return { name: "cloudflare", reason: "found wrangler.toml" };
-			if (fileExists(dir, "wrangler.jsonc"))
-				return { name: "cloudflare", reason: "found wrangler.jsonc" };
-			return null;
+		detect: (ctx) => {
+			const f =
+				findFile(ctx, "wrangler.toml") ??
+				findFile(ctx, "wrangler.jsonc") ??
+				findFile(ctx, "wrangler.json");
+			return f ? { name: "cloudflare", reason: `found ${f}` } : null;
 		},
 	},
 	{
 		name: "i18n-typesafe",
-		detect: (_dir, pkg) =>
-			hasDep(pkg, "typesafe-i18n")
-				? { name: "i18n-typesafe", reason: "found typesafe-i18n in dependencies" }
-				: null,
+		detect: (ctx) => {
+			const at = findDep(ctx, "typesafe-i18n");
+			if (at) return { name: "i18n-typesafe", reason: `found typesafe-i18n in ${pkgLabel(at)}` };
+			const f = findFile(ctx, ".typesafe-i18n.json");
+			return f ? { name: "i18n-typesafe", reason: `found ${f}` } : null;
+		},
 	},
 	{
 		name: "playwright",
-		detect: (dir, pkg) => {
-			if (hasDep(pkg, "@playwright/test"))
-				return { name: "playwright", reason: "found @playwright/test in dependencies" };
-			const config = rootConfigExists(dir, "playwright.config");
-			if (config) return { name: "playwright", reason: `found ${config}` };
-			return null;
+		detect: (ctx) => {
+			const dep = findDep(ctx, "@playwright/test");
+			if (dep) return { name: "playwright", reason: `found @playwright/test in ${pkgLabel(dep)}` };
+			const config = findConfig(ctx, "playwright.config");
+			return config ? { name: "playwright", reason: `found ${config}` } : null;
 		},
 	},
 	{
 		name: "storybook",
-		detect: (dir, pkg) => {
-			if (hasDep(pkg, "storybook"))
-				return { name: "storybook", reason: "found storybook in dependencies" };
-			if (fileExists(dir, ".storybook"))
-				return { name: "storybook", reason: "found .storybook/ directory" };
-			return null;
+		detect: (ctx) => {
+			const dep = findDep(ctx, "storybook");
+			if (dep) return { name: "storybook", reason: `found storybook in ${pkgLabel(dep)}` };
+			const dir = findFile(ctx, ".storybook");
+			return dir ? { name: "storybook", reason: `found ${dir}/ directory` } : null;
 		},
 	},
 	{
 		name: "capacitor",
-		detect: (dir, pkg) => {
-			if (hasDep(pkg, "@capgo/capacitor-updater"))
-				return { name: "capacitor", reason: "found @capgo/capacitor-updater in dependencies" };
-			if (hasDep(pkg, "@capacitor/core"))
-				return { name: "capacitor", reason: "found @capacitor/core in dependencies" };
-			const config = rootConfigExists(dir, "capacitor.config");
-			if (config) return { name: "capacitor", reason: `found ${config}` };
-			return null;
+		detect: (ctx) => {
+			const capgo = findDep(ctx, "@capgo/capacitor-updater");
+			if (capgo)
+				return {
+					name: "capacitor",
+					reason: `found @capgo/capacitor-updater in ${pkgLabel(capgo)}`,
+				};
+			const core = findDep(ctx, "@capacitor/core");
+			if (core) return { name: "capacitor", reason: `found @capacitor/core in ${pkgLabel(core)}` };
+			const config = findConfig(ctx, "capacitor.config");
+			return config ? { name: "capacitor", reason: `found ${config}` } : null;
 		},
 	},
 ];
 
-/** Scan a project directory and detect which stacks are present */
+/** Scan a project directory (root + subdirs + workspace packages) and detect which stacks are present */
 export function detectStacks(projectDir: string): DetectedStack[] {
-	const pkg = loadPackageJson(projectDir);
+	const ctx = buildContext(projectDir);
 	const detected: DetectedStack[] = [];
 	for (const detector of DETECTORS) {
-		const result = detector.detect(projectDir, pkg);
+		const result = detector.detect(ctx);
 		if (result) detected.push(result);
 	}
 	return detected;

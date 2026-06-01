@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.27 (2026-06-01)
+
+- feat: detect stacks across workspace packages and monorepo subdirectories
+
 ## 0.1.26 (2026-06-01)
 
 - docs: document update command in README CLI commands table
