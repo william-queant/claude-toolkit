@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.26 (2026-06-01)
+
+- docs: document update command in README CLI commands table
+
 ## 0.1.25 (2026-06-01)
 
 - feat: add update command to sync detected stacks into existing config

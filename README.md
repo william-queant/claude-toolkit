@@ -45,11 +45,12 @@ export default defineConfig({
 
 ## CLI Commands
 
-| Command                    | Description                                              |
-| -------------------------- | -------------------------------------------------------- |
-| `bunx claude-toolkit init` | Scaffold config file and generate `.claude/`             |
-| `bunx claude-toolkit sync` | Regenerate `.claude/` from config (after toolkit update) |
-| `bunx claude-toolkit help` | Show available commands                                  |
+| Command                      | Description                                          |
+| ---------------------------- | ---------------------------------------------------- |
+| `bunx claude-toolkit init`   | Scaffold config and generate `.claude/` (first run)  |
+| `bunx claude-toolkit update` | Add newly detected stacks to config, then regenerate |
+| `bunx claude-toolkit sync`   | Regenerate `.claude/` from the current config        |
+| `bunx claude-toolkit help`   | Show available commands                              |
 
 ## Stack Auto-Detection
 
