@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.9.0 (2026-06-08)
+
+Re-baselined from 0.1.x to reflect accumulated scope: 10 stack connectors, the full `init`/`update`/`sync` CLI, stack auto-detection with drift and monorepo/workspace support, and a complete skill/command/agent/hook system. Versioning is now conventional-commit-driven from this release onward.
+
+- feat: render/runtime-speed guidance across every stack skill, each paired with a security guardrail
+- feat: new `ct-capacitor-ui` skill for webview performance and native feel
+- feat: canonical test-speed rule in core testing skill + cross-stack `relatedSkills` wiring
+- build: conventional-commit-aware versioning (feat→minor, fix/perf→patch, breaking→major)
+- ci: automated npm publish on GitHub release
+
 ## 0.1.33 (2026-06-07)
 
 - chore: apply biome formatting to skill-eval hook
