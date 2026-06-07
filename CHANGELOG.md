@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.31 (2026-06-07)
+
+- feat: add i18n performance guidance and wire relatedSkills to solidjs/vanilla-extract
+
 ## 0.1.30 (2026-06-07)
 
 - feat: add test-speed guidance to vite, playwright, storybook, and core testing skill

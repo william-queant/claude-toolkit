@@ -19,7 +19,8 @@
 					"(?:translat).*(?:key|string)"
 				],
 				"contentPatterns": ["useI18nContext", "LL\\.", "baseLocale", "Locales"]
-			}
+			},
+			"relatedSkills": ["ct-solidjs-patterns", "ct-vanilla-extract-patterns"]
 		}
 	}
 }
