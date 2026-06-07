@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.29 (2026-06-07)
+
+- feat: add performance guidance to cloudflare, rust-wasm, and protobuf skills
+
 ## 0.1.28 (2026-06-07)
 
 - feat: add render-speed guidance to solidjs and vanilla-extract skills
