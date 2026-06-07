@@ -51,7 +51,8 @@
 				"ct-testing-patterns",
 				"ct-vite-vitest-patterns",
 				"ct-storybook-patterns",
-				"ct-playwright-patterns"
+				"ct-playwright-patterns",
+				"ct-i18n-typesafe"
 			]
 		}
 	}

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.28 (2026-06-07)
+
+- feat: add render-speed guidance to solidjs and vanilla-extract skills
+
 ## 0.1.27 (2026-06-01)
 
 - feat: detect stacks across workspace packages and monorepo subdirectories

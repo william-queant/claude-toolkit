@@ -34,7 +34,7 @@
 					"createTheme\\("
 				]
 			},
-			"relatedSkills": ["ct-solidjs-patterns"]
+			"relatedSkills": ["ct-solidjs-patterns", "ct-i18n-typesafe"]
 		}
 	}
 }
