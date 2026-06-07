@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.32 (2026-06-07)
+
+- feat: add ct-capacitor-ui skill for webview performance and native feel
+
 ## 0.1.31 (2026-06-07)
 
 - feat: add i18n performance guidance and wire relatedSkills to solidjs/vanilla-extract

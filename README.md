@@ -109,7 +109,7 @@ This keeps your config aligned as your project evolves — `init` for first-time
 | `i18n-typesafe`   | typesafe-i18n internationalization                                 |
 | `playwright`      | Playwright E2E testing, Page Objects, fixtures, CI/CD              |
 | `storybook`       | Storybook interaction testing, CSF 3, visual regression            |
-| `capacitor`       | Capacitor 8 native runtime, Capgo OTA live updates, channels       |
+| `capacitor`       | Capacitor 8 runtime, Capgo OTA, channels; webview UI & native feel |
 
 ## Core Features (always included)
 

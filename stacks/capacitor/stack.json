@@ -57,7 +57,53 @@
 			"relatedSkills": [
 				"ct-vite-vitest-patterns",
 				"ct-playwright-patterns",
-				"ct-typescript-conventions"
+				"ct-typescript-conventions",
+				"ct-capacitor-ui"
+			]
+		},
+		"ct-capacitor-ui": {
+			"description": "Capacitor webview UI performance and native feel: safe areas, touch targets, tap feedback, compositor-only animation, on-device profiling",
+			"priority": 7,
+			"triggers": {
+				"keywords": [
+					"safe area",
+					"safe-area",
+					"viewport",
+					"touch target",
+					"tap highlight",
+					"native feel",
+					"splash",
+					"overscroll",
+					"notch",
+					"home indicator",
+					"webview"
+				],
+				"keywordPatterns": [
+					"\\bsafe-area\\b",
+					"\\bviewport-fit\\b",
+					"\\btouch-action\\b",
+					"\\boverscroll\\b"
+				],
+				"pathPatterns": ["**/index.html"],
+				"intentPatterns": [
+					"(?:safe area|notch|home indicator)",
+					"(?:native feel|touch target|tap feedback)",
+					"(?:scroll|animation).*(?:jank|smooth|perf)"
+				],
+				"contentPatterns": [
+					"safe-area-inset",
+					"viewport-fit",
+					"touch-action",
+					"-webkit-tap-highlight-color",
+					"overscroll-behavior",
+					"content-visibility"
+				]
+			},
+			"relatedSkills": [
+				"ct-capacitor-ota",
+				"ct-solidjs-patterns",
+				"ct-vanilla-extract-patterns",
+				"ct-i18n-typesafe"
 			]
 		}
 	}

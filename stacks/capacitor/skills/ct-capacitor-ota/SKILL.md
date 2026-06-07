@@ -39,6 +39,21 @@ CapacitorUpdater.notifyAppReady();
 
 This is the safety net that makes OTA reversible. A bundle that white-screens never sticks.
 
+### Boot ordering: splash vs notifyAppReady
+
+A freshly-applied OTA bundle re-runs your bootstrap. Hide the splash *after* the first real view paints, or users see a white webview between hide and first render. Requires `launchAutoHide: false` (otherwise the OS hides the splash on its own schedule and you can't sequence it).
+
+```typescript
+// capacitor.config.ts → plugins.SplashScreen.launchAutoHide: false
+import { SplashScreen } from "@capacitor/splash-screen";
+
+CapacitorUpdater.notifyAppReady();   // fire-and-forget — never gate first paint on it
+await firstMeaningfulView();         // await your app's first real paint
+await SplashScreen.hide();           // only now reveal the webview
+```
+
+`notifyAppReady()` returns a Promise but the 10s `appReadyTimeout` is generous — call it early and move on; do not `await` it before painting. (Webview rendering performance and native feel live in `ct-capacitor-ui`.)
+
 ## Configuration
 
 ```typescript
@@ -176,3 +191,4 @@ OTA of JS/HTML/CSS is allowed: **Apple** developer agreement §3.3.2 (since iOS 
 - `ct-vite-vitest-patterns` — the build that produces `webDir`
 - `ct-playwright-patterns` — E2E-verify a bundle before you upload it
 - `ct-typescript-conventions` — typing `capacitor.config.ts` and the updater API
+- `ct-capacitor-ui` — webview UI performance & native feel (safe areas, touch targets, compositor-only animation)
