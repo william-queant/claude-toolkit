@@ -129,14 +129,7 @@ function matchDirectoryMapping(filePath, mappings) {
 /**
  * Evaluate a single skill against the prompt and context
  */
-function evaluateSkill(
-	skillName,
-	skill,
-	prompt,
-	promptLower,
-	filePaths,
-	rules,
-) {
+function evaluateSkill(skillName, skill, prompt, promptLower, filePaths, rules) {
 	const { triggers = {}, excludePatterns = [], priority = 5 } = skill;
 	const scoring = rules.scoring;
 
@@ -207,10 +200,7 @@ function evaluateSkill(
 	// 6. Check directory mappings
 	if (rules.directoryMappings && filePaths.length > 0) {
 		for (const filePath of filePaths) {
-			const mappedSkill = matchDirectoryMapping(
-				filePath,
-				rules.directoryMappings,
-			);
+			const mappedSkill = matchDirectoryMapping(filePath, rules.directoryMappings);
 			if (mappedSkill === skillName) {
 				score += scoring.directoryMatch;
 				reasons.push(`directory mapping`);
@@ -279,14 +269,7 @@ function evaluate(prompt) {
 
 	const matches = [];
 	for (const [name, skill] of Object.entries(skills)) {
-		const match = evaluateSkill(
-			name,
-			skill,
-			prompt,
-			promptLower,
-			filePaths,
-			rules,
-		);
+		const match = evaluateSkill(name, skill, prompt, promptLower, filePaths, rules);
 		if (match && match.score >= config.minConfidenceScore) {
 			matches.push(match);
 		}

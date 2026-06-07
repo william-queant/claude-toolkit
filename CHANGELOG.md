@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.33 (2026-06-07)
+
+- chore: apply biome formatting to skill-eval hook
+
 ## 0.1.32 (2026-06-07)
 
 - feat: add ct-capacitor-ui skill for webview performance and native feel
