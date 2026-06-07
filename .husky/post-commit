@@ -25,29 +25,63 @@ if [ -n "$PREV_HEAD" ]; then
   fi
 fi
 
-# All guards passed — this is a fresh commit
+# All guards passed — this is a fresh commit.
+# Bump the version per Conventional Commits: the commit type names *why* the
+# version changes, and the bump describes the compatibility impact to consumers.
+#   feat                       -> minor (new, backward-compatible capability)
+#   fix | perf                 -> patch (backward-compatible bug/perf fix)
+#   <type>! / BREAKING CHANGE  -> major (breaking) — capped to minor while pre-1.0
+#   docs|chore|style|refactor|test|ci|build, or non-conventional -> no release
 MSG=$(git log -1 --pretty=%s)
+BODY=$(git log -1 --pretty=%b)
 
 node -e "
 const fs = require('fs');
+const subject = process.argv[1] || '';
+const body = process.argv[2] || '';
 
-// Bump patch version
+const m = subject.match(/^(\w+)(\([^)]*\))?(!)?:/);
+const type = m ? m[1] : '';
+const breaking = (m && m[3]) || /BREAKING[ -]CHANGE/.test(body);
+
+let kind;
+if (breaking) kind = 'major';
+else if (type === 'feat') kind = 'minor';
+else if (type === 'fix' || type === 'perf') kind = 'patch';
+else kind = null; // docs/chore/style/refactor/test/ci/build or non-conventional -> no release
+
+if (!kind) process.exit(3);
+
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
-const v = pkg.version.split('.');
-v[2] = Number(v[2]) + 1;
-pkg.version = v.join('.');
+const parts = pkg.version.split('.').map(Number);
+let maj = parts[0], min = parts[1], pat = parts[2];
+
+// Pre-1.0: a breaking change bumps minor, never auto-crossing into 1.0.0.
+if (kind === 'major' && maj === 0) kind = 'minor';
+
+if (kind === 'major') { maj++; min = 0; pat = 0; }
+else if (kind === 'minor') { min++; pat = 0; }
+else { pat++; }
+pkg.version = maj + '.' + min + '.' + pat;
 fs.writeFileSync('package.json', JSON.stringify(pkg, null, '\t') + '\n');
 
-// Update changelog
 const date = new Date().toISOString().split('T')[0];
-const msg = process.argv[1];
-const entry = '## ' + pkg.version + ' (' + date + ')\n\n- ' + msg + '\n';
+const entry = '## ' + pkg.version + ' (' + date + ')\n\n- ' + subject + '\n';
 const existing = fs.existsSync('CHANGELOG.md')
   ? fs.readFileSync('CHANGELOG.md', 'utf8').replace(/^# Changelog\n*/, '')
   : '';
 fs.writeFileSync('CHANGELOG.md', '# Changelog\n\n' + entry + '\n' + existing);
-" "$MSG"
+" "$MSG" "$BODY"
 
-# Amend commit to include version bump
-SKIP_POST_COMMIT=1 git add package.json CHANGELOG.md
-SKIP_POST_COMMIT=1 git commit --amend --no-edit --no-verify
+status=$?
+if [ "$status" -eq 0 ]; then
+  # Amend the commit to include the version bump + changelog entry
+  SKIP_POST_COMMIT=1 git add package.json CHANGELOG.md
+  SKIP_POST_COMMIT=1 git commit --amend --no-edit --no-verify
+elif [ "$status" -eq 3 ]; then
+  : # no release-worthy change (docs/chore/etc.) — leave the version untouched
+else
+  echo "post-commit: version bump skipped (version script exited $status)" >&2
+fi
+
+exit 0
