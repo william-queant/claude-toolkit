@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.30 (2026-06-07)
+
+- feat: add test-speed guidance to vite, playwright, storybook, and core testing skill
+
 ## 0.1.29 (2026-06-07)
 
 - feat: add performance guidance to cloudflare, rust-wasm, and protobuf skills

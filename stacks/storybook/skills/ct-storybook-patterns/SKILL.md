@@ -156,6 +156,58 @@ test("renders primary", () => {
 });
 ```
 
+## Performance
+
+> _Verified against Storybook 8/9/10 + Vitest browser mode (2026-06)._
+
+Browser-mode story tests are the slowest part of CI. Optimize for parallelism, lazy work, and caching.
+
+### Shard the Vitest run across CI jobs
+
+```bash
+# CI matrix: 4 jobs, each runs 1/4 of the story FILES (sharding is file-level)
+vitest run --project=storybook --shard=1/4 --reporter=blob   # job 1
+vitest run --project=storybook --shard=2/4 --reporter=blob   # job 2 ... etc.
+# final job merges results + coverage from all shards:
+vitest --merge-reports --reporter=junit --coverage
+```
+
+- `--project=storybook` skips the jsdom `unit` project when you only need stories.
+- Browser tests already run files in parallel (`fileParallelism` defaults on). Don't disable it.
+- `--reporter=blob` per shard + `--merge-reports` is required, or coverage is per-shard and incomplete.
+
+### Don't confuse `instances` with parallelism
+
+`browser.instances` runs the **same** test files across different browsers/setups -- each extra instance re-runs the whole suite. It is not a way to add CPU parallelism.
+
+```typescript
+browser: { enabled: true, headless: true, provider: playwright(),
+  instances: [{ browser: "chromium" }] },  // keep ONE for speed
+// Add instances only to cover more browsers (each re-runs everything).
+// Scale CPU via fileParallelism (within a job) + --shard (across CI jobs).
+```
+
+### Dev startup is already lazy
+
+On-demand story loading is automatic in modern Storybook (Vite builder, code-split: a story's code loads only when rendered). There is no flag to enable -- it's simply the default in Storybook 8/9/10 (the old `storyStoreV7` flag is gone).
+
+- Webpack's `lazyCompilation`/`fsCache` do **not** apply to the Vite builder; ignore that advice for this stack.
+- Don't defeat code-splitting with eager glob imports of all stories in custom config.
+
+### Keep stories cheap
+
+- Scope expensive setup **per-story**, not in `preview.ts` globals -- global decorators/loaders run for *every* story x every interaction test.
+- `mswLoader` and theme providers as globals are fine if light; move heavy data setup to `parameters` on the stories that need it.
+- Gate axe-core with `parameters.a11y.test` (`"error" | "todo" | "off"`), settable project -> component -> story (most specific wins). `test: "error"` globally runs the full ruleset on every story; downgrade or `"off"` where not needed, or run a11y in its own shard. (`tags` only include/exclude stories from a run -- they don't toggle a11y.)
+
+### Cache the Vite dep-prebundle between CI runs
+
+```yaml
+# Cache node_modules/.vite (Vite's default cacheDir), keyed on the lockfile.
+# This is the esbuild dependency pre-bundling cache used by dev / the browser-test run.
+# Note: it does NOT speed up `storybook build` (vite build ignores it).
+```
+
 ## Anti-Patterns
 
 1. **Destructuring SolidJS props in stories** -- Pass props via `args`; use `createJSXDecorator` for decorators.
@@ -164,3 +216,13 @@ test("renders primary", () => {
 4. **Skipping error/edge-case stories** -- Always include loading, error, empty, boundary states.
 5. **Using `@storybook/test-runner`** -- Use `@storybook/addon-vitest` instead.
 6. **Registering `sb.mock` in story files** -- Register in `.storybook/preview.ts` only.
+7. **Running the full story suite in one CI job** -- Use `vitest --shard=N/M` across matrix jobs (with `--reporter=blob` + `--merge-reports`).
+8. **Duplicating same-browser `instances` to "go faster"** -- Each instance re-runs the whole suite. Scale via `fileParallelism` + `--shard`; add instances only for more browsers.
+9. **Heavy decorators/loaders in `preview.ts`** -- Global setup runs per-story; scope expensive providers/data per-story.
+10. **`a11y: { test: "error" }` globally with no scoping** -- Axe runs the full ruleset per story; downgrade per story via `parameters.a11y.test` or use a dedicated a11y shard.
+11. **Discarding the Vite cache between CI runs** -- Persist `node_modules/.vite` keyed on the lockfile (dev / browser-test speedup; not `storybook build`).
+
+## See Also
+
+- `ct-testing-patterns` — the canonical cross-runner test-speed rule (file-level `--shard` + blob/merge-reports, parallelism).
+- `ct-vite-vitest-patterns` — owns the deep Vitest sharding/`--project`/cache config the browser-mode run inherits.

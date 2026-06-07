@@ -107,7 +107,7 @@ await page.route("**/analytics/**", (route) => route.abort());
 
 Mock ~80% of API calls for speed; keep ~20% hitting real endpoints. Always call `route.continue()`, `route.fulfill()`, or `route.abort()`. Use `page.unrouteAll()` in cleanup.
 
-## WebSocket Mocking (v1.53+)
+## WebSocket Mocking (v1.48+)
 
 ```typescript
 await page.routeWebSocket("wss://example.com/ws", (ws) => {
@@ -127,7 +127,7 @@ test("WCAG 2.1 AA", async ({ page }) => {
 });
 ```
 
-Aria snapshots (v1.52+): `await expect(nav).toMatchAriaSnapshot(...)`.
+Aria snapshots (v1.49+): `await expect(nav).toMatchAriaSnapshot(...)`.
 
 ## Parallelization
 
@@ -136,6 +136,65 @@ Aria snapshots (v1.52+): `await expect(nav).toMatchAriaSnapshot(...)`.
 - Full: `fullyParallel: true` in config
 
 Each worker gets its own `BrowserContext` (isolated cookies/storage). Use `mode: "serial"` sparingly.
+
+## Test Speed
+
+> _Verified against Playwright 1.5x (2026-06)._
+
+E2E wall-clock is dominated by browser launches and UI setup. Three levers: maximize parallelism, seed state over HTTP, fan out across CI.
+
+```typescript
+// playwright.config.ts
+export default defineConfig({
+  fullyParallel: true,                          // parallelize within files, not just across them
+  workers: process.env.CI ? "50%" : undefined,  // track the runner's real vCPUs; undefined = 50% cores locally
+  webServer: {
+    command: "npm run preview",                 // prebuilt/preview server, not a dev build
+    url: "http://localhost:4173",
+    reuseExistingServer: !process.env.CI,       // reuse on local reruns; CI always boots fresh
+    timeout: 120_000,
+  },
+});
+```
+
+> Don't hardcode `workers` to a number larger than the runner. GitHub standard runners are 2 vCPU (private) / 4 (public); oversubscribing thrashes. `"50%"` (or a count you've matched to the runner) is portable.
+
+**Seed state over HTTP, not the UI.** Driving the browser to create fixtures/auth is the costliest per-test work. Do it once in the `setup` project via the `request` fixture (no browser, no UI clicks), then reuse `storageState` — same project-dependency pattern this stack already uses for UI login:
+
+```typescript
+// e2e/auth.setup.ts  (consumed via dependencies: ["setup"] + storageState in config)
+import { test as setup } from "@playwright/test";
+
+setup("authenticate via API", async ({ request }) => {
+  await request.post("/api/login", {
+    data: { email: process.env.E2E_EMAIL, password: process.env.E2E_PASSWORD },
+  });
+  await request.storageState({ path: "e2e/.auth/user.json" });
+});
+```
+
+The `request` fixture is a full HTTP client (it wraps `apiRequest.newContext()` under the hood) and carries cookies set by the response — no manual context to dispose. Keep credentials in env/secrets, never literals, and keep `e2e/.auth/` gitignored (it holds live session tokens).
+
+**Shard across CI runners** (blob reporter + `merge-reports`, v1.37+):
+
+```yaml
+strategy:
+  matrix: { shard: [1, 2, 3, 4] }
+steps:
+  - run: npx playwright test --shard=${{ matrix.shard }}/4
+# reporter: process.env.CI ? "blob" : "html"  in config
+# upload blob-report/, then a dependent job:
+  - run: npx playwright merge-reports --reporter=html ./all-blob-reports
+```
+
+Shards stay balanced only when `fullyParallel: true` lets Playwright split at the test level; otherwise file-level granularity leaves wall-clock gated by the slowest shard.
+
+| Lever | Effect |
+|---|---|
+| `fullyParallel: true` + `workers` | Near-linear speedup up to vCPU count |
+| `request` fixture seeding | Cuts per-test setup from seconds to ms |
+| `--shard=i/n` across runners | ~total/n with `fullyParallel`; uneven (gated by slowest shard) without it |
+| `trace: "on-first-retry"` | No trace cost on the passing path |
 
 ## CI/CD
 
@@ -166,3 +225,12 @@ Each worker gets its own `BrowserContext` (isolated cookies/storage). Use `mode:
 6. **Using Playwright for unit tests** -- Use Vitest for pure logic.
 7. **Committing raw codegen output** -- Always refactor into Page Objects.
 8. **Not cleaning up route handlers** -- Use `page.unrouteAll()`.
+9. **Logging in / seeding data through the UI per test** -- Use the `request` fixture (or `context.request`) to seed state over HTTP, save it to `storageState`, reuse via project `dependencies`.
+10. **Hardcoding `workers` above the runner's vCPUs on CI** -- Defaults to 50% of *logical* cores; throttled/oversubscribed runners thrash. Use `"50%"` or pin to the runner's real vCPU count.
+11. **`--shard` without the blob reporter + `merge-reports`** -- Produces fragmented/duplicate reports instead of one merged HTML.
+12. **Booting a dev server (HMR/rebuild) as the `webServer` target** -- Point CI at a prebuilt preview build.
+
+## See Also
+
+- `ct-testing-patterns` — the canonical cross-runner test-speed rule (parallelism sized to the runner, file-level `--shard` + blob/merge-reports).
+- `ct-vite-vitest-patterns` — shares the CI sharding/worker budget; don't oversubscribe a runner running both.

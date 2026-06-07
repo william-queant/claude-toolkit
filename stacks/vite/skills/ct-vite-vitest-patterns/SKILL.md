@@ -470,6 +470,67 @@ The compat layer auto-converts old keys. New code should use the new keys.
 
 ---
 
+## Performance
+
+> _Verified against Vite 8 / Rolldown / Vitest 4 (2026-06)._
+
+### Dev Cold-Start & HMR: optimizeDeps
+
+Vite pre-bundles bare-import deps on first run, cached in `node_modules/.vite`. A missing entry triggers a mid-session "new dependency optimized, reloading" full reload -- the #1 HMR killer.
+
+```typescript
+optimizeDeps: {
+  include: ['lodash-es', 'pkg/cjs-only'], // force-bundle CJS / plugin-injected / lazy deps not auto-discovered
+  exclude: ['small-pure-esm-lib'],         // only small pure-ESM pkgs, or deps that break when bundled
+}
+```
+
+Do **not** `exclude` a large multi-file ESM dep (e.g. `lodash-es` ships 600+ modules) -- unbundled it floods the browser with parallel requests and slows page loads; keep it pre-bundled. Never `exclude` a CJS dep. If an excluded ESM dep has a nested CJS dep, add that nested dep to `include`.
+
+`vite --force` (or `rm -rf node_modules/.vite`) busts a stale cache. Pair with `server.warmup.clientFiles` (already covered).
+
+### Bundle Size: measure, then split
+
+```typescript
+import { visualizer } from 'rollup-plugin-visualizer' // ^7 for Vite 8 / Rolldown
+process.env.ANALYZE && visualizer({ gzipSize: true, brotliSize: true }) // ANALYZE=1 vite build
+```
+
+Read the gzip/brotli column to find oversized chunks. Route-level dynamic `import()` is the primary code-split. Use manual chunks only to isolate stable vendor deps. In Vite 8 / Rolldown the `manualChunks` object form is removed and the function form is deprecated -- use `rolldownOptions.output.codeSplitting` (the old `advancedChunks` key is a deprecated alias):
+
+```typescript
+build: { rolldownOptions: { output: {
+  codeSplitting: { groups: [{ name: 'vendor', test: /node_modules/ }] },
+} } }
+```
+
+### build.target & CSS
+
+Don't lower `target: 'baseline-widely-available'` without cause. A low target (`es2015`) makes Oxc down-level async/await, optional chaining, and spread into verbose helpers -- bigger bundles, slower transforms. Match real browser support.
+
+```typescript
+css: { transformer: 'lightningcss' }, // experimental: faster + smaller than the postcss default
+```
+
+`build.cssMinify` already defaults to `'lightningcss'` in Vite 8 -- no action needed for minification; the opt-in above is only for the CSS *transformer*.
+
+### Vitest Run Speed: pool & isolate
+
+`isolate: true` (default) builds a fresh environment per test file -- safe but slow. Disabling it is often the single biggest speedup for pure-logic suites.
+
+| Goal | Setting |
+|---|---|
+| Safe default (global mutation, `process.env`, fake timers) | `pool: 'forks'`, `isolate: true` |
+| Fastest, pure side-effect-free Node logic | `pool: 'threads'`, `isolate: false` |
+| Fast jsdom (leaks globals -- verify) | `pool: 'vmThreads'` (isolation can't be disabled) |
+| Debug a flaky/order-dependent test | `--no-file-parallelism` or `poolOptions.threads.singleThread` |
+
+```typescript
+test: { pool: 'threads', isolate: false } // big speedup for logic suites; leaks global state between files
+```
+
+> `pool: 'forks'` and `isolate: true` are the Vitest defaults. Gains from `threads` show mostly in larger suites; `forks` stays safer for native-module / segfault-prone tests.
+
 ## Anti-Patterns
 
 ### Vite
@@ -479,6 +540,10 @@ The compat layer auto-converts old keys. New code should use the new keys.
 3. **Duplicating resolve config for tests** -- Vitest inherits Vite's aliases and plugins. Don't redeclare.
 4. **Using `rollupOptions` in Vite 8** -- Works via compat but generates warnings. Use `rolldownOptions`.
 5. **Not externalizing peer deps in library mode** -- Bundling framework deps causes duplicate instances.
+6. **Lowering `build.target` by habit** -- Down-levels modern syntax into helper bloat and slows transforms. Set it to your actual browser support.
+7. **Tuning chunks without measuring** -- Run `ANALYZE=1 vite build` with `visualizer` first. Over-grouping into manual chunks defeats per-route lazy loading and cache granularity.
+8. **`optimizeDeps.exclude` on large ESM deps** -- Unbundling a multi-file ESM package floods the browser with requests. Exclude only small pure-ESM or bundle-breaking deps.
+9. **Ignoring the "new dependency optimized, reloading" warning** -- A dep escaped pre-bundle discovery. Add it to `optimizeDeps.include` to stop full reloads.
 
 ### Vitest
 
@@ -490,3 +555,9 @@ The compat layer auto-converts old keys. New code should use the new keys.
 6. **Snapshot-only testing** -- Snapshots catch regressions but don't verify correctness. Add explicit assertions.
 7. **Global jsdom environment** -- Use `test.projects` to run DOM tests in jsdom and logic tests in node.
 8. **Using `vi.spyOn` in browser mode** -- Use `vi.mock('./module', { spy: true })` instead.
+9. **Leaving `isolate: true` on pure-logic suites** -- A large run-speed cost. Set `isolate: false` + `pool: 'threads'` for side-effect-free tests; keep `forks` + `isolate: true` where global/env mutation needs isolation.
+
+## See Also
+
+- `ct-testing-patterns` — the canonical cross-runner test-speed rule (parallelism, file-level `--shard` + blob/merge-reports, isolate trade-off).
+- `ct-solidjs-patterns` — `lazy()` route/screen code-splitting relies on Vite's dynamic-import chunking.

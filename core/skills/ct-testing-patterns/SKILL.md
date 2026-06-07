@@ -107,6 +107,18 @@ Bun supports `describe`, `it`/`test`, `expect`, lifecycle hooks, and snapshot te
 
 See 3-Layer Testing Strategy above. Many unit tests (fast, focused) > some interaction tests (component sandbox) > few E2E tests (full flow). Aim for 70/20/10 distribution.
 
+## Test Speed
+
+Three levers recur across every runner (Vitest, Playwright, Storybook browser mode). Stated once here; each stack skill carries the framework-specific syntax.
+
+- **Parallelism sized to the runner.** Enable file-level parallelism (Vitest `fileParallelism`, Playwright `fullyParallel`), but cap workers to the runner's *real* vCPUs (`"50%"` or a measured count). GitHub standard runners are 2 vCPU (private) / 4 (public); oversubscribing thrashes.
+- **Shard across CI jobs, then merge the blob reports.** Sharding splits at the *file* level (`--shard=i/n`), so wall-clock is gated by the slowest shard -- balance file sizes. Always emit a blob report per shard (`--reporter=blob`) and merge it (`merge-reports` / `--merge-reports`) in a dependent job, or results and coverage are fragmented and incomplete.
+- **Skip isolation where state is clean.** Per-file environment isolation is the safe default but the biggest run-speed cost. Disable it (Vitest `isolate: false`, `pool: 'threads'`) only for side-effect-free logic suites; keep it where tests mutate globals/env/timers.
+
+Profile before tuning, and never `sleep` to mask timing -- use the framework's auto-waiting (see Shared Principles).
+
+Per-runner config: `ct-vite-vitest-patterns`, `ct-playwright-patterns`, `ct-storybook-patterns`.
+
 ## Anti-Patterns
 
 1. **Testing implementation** -- Asserting internal state or call counts breaks on refactors.
