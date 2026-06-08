@@ -14,15 +14,16 @@ Whether you're starting a new project from scratch or consolidating an existing 
 # Install as a dev dependency
 bun add -d claude-toolkit
 
-# Scaffold config and generate .claude/
-bunx claude-toolkit init
+# Generate .claude/ — creates the config from detection on the first run
+bunx claude-toolkit
 ```
 
 ## How It Works
 
-1. You define a `claude-toolkit.config.ts` at your project root
-2. The toolkit generates a `.claude/` directory with skills, hooks, commands, and agents
+1. Run `bunx claude-toolkit` — on the first run it creates a `claude-toolkit.config.ts` at your project root, pre-filled with the stacks it detects
+2. It generates a `.claude/` directory with skills, hooks, commands, and agents — regenerated cleanly each run, so stacks you remove leave no stale skills behind
 3. Claude Code picks up the generated config automatically
+4. `.claude/` regenerates automatically on install whenever the toolkit version changes, so upgrades land without running anything
 
 ```ts
 import { defineConfig } from "claude-toolkit";
@@ -45,18 +46,19 @@ export default defineConfig({
 
 ## CLI Commands
 
-| Command                      | Description                                          |
-| ---------------------------- | ---------------------------------------------------- |
-| `bunx claude-toolkit init`   | Scaffold config and generate `.claude/` (first run)  |
-| `bunx claude-toolkit update` | Add newly detected stacks to config, then regenerate |
-| `bunx claude-toolkit sync`   | Regenerate `.claude/` from the current config        |
-| `bunx claude-toolkit help`   | Show available commands                              |
+| Command                        | Description                                                             |
+| ------------------------------ | ----------------------------------------------------------------------- |
+| `bunx claude-toolkit`          | Create the config if missing, then (re)generate `.claude/`. Idempotent. |
+| `bunx claude-toolkit --update` | Same, and also add newly-detected stacks to your config                 |
+| `bunx claude-toolkit help`     | Show available commands                                                 |
+
+Aliases (back-compat): `init` is a friendly name for the bare command, `update` equals `--update`, and `sync` is deprecated — use the bare command. `.claude/` also regenerates automatically on install when the toolkit version changes.
 
 ## Stack Auto-Detection
 
-The toolkit automatically detects which stacks your project uses by scanning `package.json` dependencies, config files, and project structure.
+The toolkit detects which stacks your project uses by scanning `package.json` dependencies, config files, and project structure.
 
-**On `init`** (new project), detected stacks are pre-filled in the generated config:
+**First run** (no config yet) — detected stacks are pre-filled into a new config:
 
 ```text
 Detected stacks:
@@ -65,36 +67,31 @@ Detected stacks:
   cloudflare — found wrangler.toml
 
 Created claude-toolkit.config.ts
+Generated .claude/ with 3 stack(s) and 4 core skills
 ```
 
-**On `sync`** (existing config), the toolkit compares your configured stacks against what it detects and reports any drift:
+**Later runs** (config exists) — `bunx claude-toolkit` regenerates `.claude/` and reports drift between your config and what it detects, but never edits the config:
 
 ```text
 Stack drift detected:
-  + playwright — found @playwright/test in dependencies (not in config)
-  - rust-wasm  — in config but not detected in project
+  + playwright — found @playwright/test in dependencies (detected, not in config)
+  - rust-wasm  — in config, not detected
 
-Suggested update in claude-toolkit.config.ts:
-  stacks: ["solidjs", "vite", "cloudflare", "playwright"]
-
-Run "claude-toolkit update" to add detected stacks automatically.
+Run "bunx claude-toolkit --update" to add detected stacks to your config.
 ```
 
-`sync` is non-destructive — it reports drift but never edits your config.
-
-**On `update`** (existing config), the toolkit adds any newly detected stacks to your config and regenerates `.claude/` in one step — use this when you add a new stack (e.g. Capacitor) to an existing project:
+**Pulling in new stacks** — `bunx claude-toolkit --update` adds any newly-detected stacks to your config and regenerates in one step (use it when you add a stack, e.g. Capacitor):
 
 ```text
 Adding newly detected stacks to config:
   + capacitor — found @capacitor/core in dependencies
 Updated claude-toolkit.config.ts
-Generated .claude/ with 3 stack(s) and 4 core skills
-Update complete.
+Generated .claude/ with 4 stack(s) and 4 core skills
 ```
 
-Stacks already in your config that are no longer detected are reported but left unchanged (remove them manually if intended). If no config exists yet, `update` tells you to run `init` first.
+Stacks in your config that are no longer detected are reported but left unchanged (remove them manually if intended).
 
-This keeps your config aligned as your project evolves — `init` for first-time setup, `update` to pull in new stacks, `sync` to regenerate from the current config.
+**Automatic regeneration** — when the installed toolkit version changes, `.claude/` is regenerated on install automatically (via a `postinstall` hook), so a toolkit upgrade ships its updated skills without you running anything. This only refreshes the generated `.claude/` — it never creates or edits committed files.
 
 ## Available Stacks
 
@@ -163,14 +160,12 @@ Full reference documentation for all skills, commands, and agents is available i
 
 ## Versioning
 
-The patch version auto-increments on every commit via a post-commit hook. `CHANGELOG.md` is updated automatically with the commit message.
+Version bumps are derived from your commit messages (Conventional Commits) by a post-commit hook, and `CHANGELOG.md` is updated automatically:
 
-To bump major or minor versions manually:
+- `feat:` → minor · `fix:` / `perf:` → patch · `feat!:` / `BREAKING CHANGE` → major (capped to minor while pre-1.0)
+- `docs:` / `chore:` / `refactor:` / `style:` / `test:` / `ci:` / `build:` → no version change
 
-```bash
-bun version major   # 0.1.x → 1.0.0
-bun version minor   # 0.1.x → 0.2.0
-```
+To set an exact version deliberately (a re-baseline, or `1.0.0`), edit `package.json` and prepend a `CHANGELOG.md` entry, then commit with `SKIP_POST_COMMIT=1` so the hook doesn't re-bump, and tag `vX.Y.Z`. Publishing to npm happens automatically when a GitHub Release is published (see `.github/workflows/publish.yml`).
 
 ## Development
 

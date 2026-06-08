@@ -1,11 +1,5 @@
 import { existsSync } from "node:fs";
-import {
-	copyFile,
-	mkdir,
-	readdir,
-	readFile,
-	writeFile,
-} from "node:fs/promises";
+import { copyFile, mkdir, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 
 /** Recursively copy a directory */
@@ -24,11 +18,13 @@ export async function copyDir(src: string, dest: string): Promise<void> {
 	}
 }
 
+/** Remove a file or directory recursively. No-op if the path doesn't exist. */
+export async function removePath(path: string): Promise<void> {
+	await rm(path, { recursive: true, force: true });
+}
+
 /** Write a file, creating parent directories as needed */
-export async function writeFileEnsureDir(
-	filePath: string,
-	content: string,
-): Promise<void> {
+export async function writeFileEnsureDir(filePath: string, content: string): Promise<void> {
 	await mkdir(dirname(filePath), { recursive: true });
 	await writeFile(filePath, content, "utf-8");
 }
@@ -45,9 +41,6 @@ export function exists(filePath: string): boolean {
 }
 
 /** Simple template replacement: {{key}} → value */
-export function renderTemplate(
-	template: string,
-	vars: Record<string, string>,
-): string {
+export function renderTemplate(template: string, vars: Record<string, string>): string {
 	return template.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? "");
 }

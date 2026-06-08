@@ -3,10 +3,17 @@
 /**
  * claude-toolkit CLI
  *
- * Commands:
- *   init    — Scaffold config file and generate .claude/ (first-time setup)
- *   update  — Add newly detected stacks to an existing config, then regenerate
- *   sync    — Regenerate .claude/ from existing config
+ * One idempotent command does it all:
+ *   bunx claude-toolkit            Create the config if missing, then (re)generate .claude/
+ *   bunx claude-toolkit --update   Also pull newly-detected stacks into the config
+ *
+ * Aliases / back-compat:
+ *   init     Friendly name for the first run (same as the bare command)
+ *   update   Same as `--update`
+ *   sync     Deprecated alias of the bare command
+ *
+ * .claude/ is also regenerated automatically on install when the installed
+ * toolkit version changes (see bin/postinstall.mjs).
  */
 
 import { existsSync } from "node:fs";
@@ -18,12 +25,12 @@ import type { ClaudeToolkitConfig } from "../src/types.js";
 
 const CONFIG_FILENAME = "claude-toolkit.config.ts";
 
-/** Build a `stacks: [...]` literal for injection into the config file */
+/** Build a `stacks: [...]` literal for injection into the config file. */
 function buildStacksLiteral(stacks: string[]): string {
 	return stacks.length > 0 ? `stacks: [${stacks.map((s) => `"${s}"`).join(", ")}]` : "stacks: []";
 }
 
-/** Rewrite the `stacks: [...]` array in an existing config file in place */
+/** Rewrite the `stacks: [...]` array in an existing config file in place. */
 async function updateConfigStacks(configPath: string, stacks: string[]): Promise<void> {
 	const content = await readFile(configPath, "utf-8");
 	const stacksArray = /stacks:\s*\[[^\]]*\]/;
@@ -39,194 +46,223 @@ async function updateConfigStacks(configPath: string, stacks: string[]): Promise
 async function loadConfig(projectDir: string): Promise<ClaudeToolkitConfig> {
 	const configPath = join(projectDir, CONFIG_FILENAME);
 	if (!existsSync(configPath)) {
-		throw new Error(`Config not found: ${configPath}\nRun "claude-toolkit init" first.`);
+		throw new Error(`Config not found: ${configPath}\nRun "bunx claude-toolkit" first.`);
 	}
-	const module = await import(configPath);
-	return module.default as ClaudeToolkitConfig;
+	let mod: { default?: ClaudeToolkitConfig };
+	try {
+		mod = await import(configPath);
+	} catch (err) {
+		throw new Error(
+			`Failed to load ${CONFIG_FILENAME}. Make sure claude-toolkit is installed in this project ` +
+				`(e.g. "bun add -d claude-toolkit"), then run "bunx claude-toolkit" again.\n  ${(err as Error).message}`,
+		);
+	}
+	return mod.default as ClaudeToolkitConfig;
 }
 
-async function init(projectDir: string): Promise<void> {
-	const configPath = join(projectDir, CONFIG_FILENAME);
-
-	if (existsSync(configPath)) {
-		console.log(`Config already exists: ${configPath}`);
-		console.log("\nThis project is already initialized. Did you mean to:");
-		console.log(
-			"  claude-toolkit update   # detect & add new stacks to your config, then regenerate",
-		);
-		console.log("  claude-toolkit sync     # regenerate .claude/ from the current config");
-		return;
-	}
-
-	// Detect stacks
-	const detected = detectStacks(projectDir);
-	if (detected.length > 0) {
-		console.log("Detected stacks:");
-		const maxLen = Math.max(...detected.map((d) => d.name.length));
-		for (const d of detected) {
-			console.log(`  ${d.name.padEnd(maxLen)} — ${d.reason}`);
-		}
-	} else {
-		console.log(`No stacks detected. You can add them manually in ${CONFIG_FILENAME}`);
-	}
-
-	// Build stacks literal for config injection
-	const stacksLiteral = buildStacksLiteral(detected.map((d) => d.name));
-
-	// Copy starter config with detected stacks injected
+/** Create claude-toolkit.config.ts from the template with detected stacks injected. */
+async function scaffoldConfig(configPath: string, stacks: string[]): Promise<void> {
+	const stacksLiteral = buildStacksLiteral(stacks);
 	const templatePath = join(import.meta.dirname, "..", "templates", "claude-toolkit.config.ts");
+	let content: string;
 	if (existsSync(templatePath)) {
-		const template = await readFile(templatePath, "utf-8");
-		const configContent = template.replace("stacks: []", stacksLiteral);
-		await writeFile(configPath, configContent, "utf-8");
-		console.log(`Created ${CONFIG_FILENAME}`);
+		content = (await readFile(templatePath, "utf-8")).replace("stacks: []", stacksLiteral);
 	} else {
-		// Inline fallback
-		const defaultConfig = `import { defineConfig } from 'claude-toolkit'
+		content = `import { defineConfig } from "claude-toolkit";
 
 export default defineConfig({
-  ${stacksLiteral},
-  packageManager: 'bun',
-  hooks: {
-    formatter: 'bun run prettier --write',
-    testRunner: 'bun run vitest run',
-    typeCheck: 'bun run tsc --noEmit',
-  },
-  git: {
-    branchPrefix: 'dev',
-    protectedBranches: ['main'],
-  },
-})
+	${stacksLiteral},
+	packageManager: "bun",
+	hooks: {
+		formatter: "bun run prettier --write",
+		testRunner: "bun run vitest run",
+		typeCheck: "bun run tsc --noEmit",
+	},
+	git: {
+		branchPrefix: "dev",
+		protectedBranches: ["main"],
+	},
+});
 `;
-		await writeFile(configPath, defaultConfig, "utf-8");
-		console.log(`Created ${CONFIG_FILENAME}`);
 	}
-
-	// Generate
-	return sync(projectDir);
+	await writeFile(configPath, content, "utf-8");
 }
 
-async function sync(projectDir: string): Promise<void> {
-	const config = await loadConfig(projectDir);
-
-	// Compare detected stacks against config
-	const detected = detectStacks(projectDir);
-	const configuredNames = new Set(config.stacks);
-	const detectedNames = new Set(detected.map((d) => d.name));
-
-	const missing = detected.filter((d) => !configuredNames.has(d.name));
-	const stale = config.stacks.filter((s) => !detectedNames.has(s));
-
-	if (missing.length > 0 || stale.length > 0) {
-		console.log("\nStack drift detected:");
-		if (missing.length > 0) {
-			const maxLen = Math.max(...missing.map((d) => d.name.length));
-			for (const d of missing) {
-				console.log(`  + ${d.name.padEnd(maxLen)} — ${d.reason} (not in config)`);
-			}
-		}
-		if (stale.length > 0) {
-			for (const s of stale) {
-				console.log(`  - ${s} — in config but not detected in project`);
-			}
-		}
-		const suggested = [
-			...new Set([
-				...config.stacks.filter((s) => !stale.includes(s)),
-				...missing.map((d) => d.name),
-			]),
-		];
-		console.log(`\nSuggested update in ${CONFIG_FILENAME}:`);
-		console.log(`  ${buildStacksLiteral(suggested)}`);
-		if (missing.length > 0) {
-			console.log('\nRun "claude-toolkit update" to add detected stacks automatically.\n');
-		}
-	}
-
-	await generate(projectDir, config);
-	console.log("Sync complete.");
+interface RunOptions {
+	/** Also write newly-detected stacks into the config (the old `update`). */
+	update?: boolean;
+	/** Suppress informational output. */
+	quiet?: boolean;
 }
 
 /**
- * Update an existing config by adding newly detected stacks, then regenerate.
- * Detected-but-missing stacks are added; stacks in config that are no longer
- * detected are reported but left unchanged. Errors out if no config exists.
+ * The one command. Idempotent:
+ *  - no config yet -> create it from detection
+ *  - config exists -> report drift (or, with `update`, merge detected stacks in)
+ * Always ends by cleanly regenerating .claude/.
  */
-async function update(projectDir: string): Promise<void> {
+async function run(projectDir: string, options: RunOptions = {}): Promise<void> {
+	const { update = false, quiet = false } = options;
+	const log = quiet ? (_msg = "") => {} : (msg = "") => console.log(msg);
 	const configPath = join(projectDir, CONFIG_FILENAME);
+
+	let config: ClaudeToolkitConfig;
+
 	if (!existsSync(configPath)) {
-		console.error(`No ${CONFIG_FILENAME} found in ${projectDir}.`);
-		console.error(`Run "claude-toolkit init" to create one first.`);
-		process.exit(1);
-	}
-
-	const config = await loadConfig(projectDir);
-	const detected = detectStacks(projectDir);
-	const configuredNames = new Set(config.stacks);
-	const detectedNames = new Set(detected.map((d) => d.name));
-
-	const missing = detected.filter((d) => !configuredNames.has(d.name));
-	const stale = config.stacks.filter((s) => !detectedNames.has(s));
-
-	if (missing.length === 0) {
-		console.log("Config is already up to date — all detected stacks are present.");
+		// First run: create the config from what we detect.
+		const detected = detectStacks(projectDir);
+		if (detected.length > 0) {
+			log("Detected stacks:");
+			const pad = Math.max(...detected.map((d) => d.name.length));
+			for (const d of detected) log(`  ${d.name.padEnd(pad)} — ${d.reason}`);
+		} else {
+			log(`No stacks detected. Add them manually in ${CONFIG_FILENAME}.`);
+		}
+		await scaffoldConfig(
+			configPath,
+			detected.map((d) => d.name),
+		);
+		log(`Created ${CONFIG_FILENAME}`);
+		// Build the config in memory (mirroring the scaffolded template defaults) so the
+		// first run never depends on importing the freshly-written config file — which
+		// imports "claude-toolkit" and would fail if the package isn't installed yet.
+		config = {
+			stacks: detected.map((d) => d.name),
+			packageManager: "bun",
+			hooks: {
+				formatter: "bun run prettier --write",
+				testRunner: "bun run vitest run",
+				typeCheck: "bun run tsc --noEmit",
+			},
+			git: { branchPrefix: "dev", protectedBranches: ["main"] },
+		};
 	} else {
-		console.log("Adding newly detected stacks to config:");
-		const maxLen = Math.max(...missing.map((d) => d.name.length));
-		for (const d of missing) {
-			console.log(`  + ${d.name.padEnd(maxLen)} — ${d.reason}`);
+		config = await loadConfig(projectDir);
+		const detected = detectStacks(projectDir);
+		const configured = new Set(config.stacks);
+		const detectedNames = new Set(detected.map((d) => d.name));
+		const missing = detected.filter((d) => !configured.has(d.name));
+		const stale = config.stacks.filter((s) => !detectedNames.has(s));
+
+		if (update) {
+			if (missing.length > 0) {
+				log("Adding newly detected stacks to config:");
+				const pad = Math.max(...missing.map((d) => d.name.length));
+				for (const d of missing) log(`  + ${d.name.padEnd(pad)} — ${d.reason}`);
+				config.stacks = [...config.stacks, ...missing.map((d) => d.name)];
+				await updateConfigStacks(configPath, config.stacks);
+				log(`Updated ${CONFIG_FILENAME}`);
+			} else {
+				log("Config already includes all detected stacks.");
+			}
+			if (stale.length > 0) {
+				log("\nIn config but not detected (left unchanged):");
+				for (const s of stale) log(`  - ${s}`);
+				log("Remove them from the config manually if they no longer apply.");
+			}
+		} else if (missing.length > 0 || stale.length > 0) {
+			log("\nStack drift detected:");
+			const pad = Math.max(1, ...missing.map((d) => d.name.length));
+			for (const d of missing) {
+				log(`  + ${d.name.padEnd(pad)} — ${d.reason} (detected, not in config)`);
+			}
+			for (const s of stale) log(`  - ${s} — in config, not detected`);
+			if (missing.length > 0) {
+				log(`\nRun "bunx claude-toolkit --update" to add detected stacks to your config.`);
+			}
 		}
-		const nextStacks = [...config.stacks, ...missing.map((d) => d.name)];
-		await updateConfigStacks(configPath, nextStacks);
-		config.stacks = nextStacks;
-		console.log(`Updated ${CONFIG_FILENAME}`);
 	}
 
-	if (stale.length > 0) {
-		console.log("\nIn config but not detected (left unchanged):");
-		for (const s of stale) {
-			console.log(`  - ${s}`);
-		}
-		console.log("Remove them from the config manually if they no longer apply.");
-	}
-
-	await generate(projectDir, config);
-	console.log("Update complete.");
+	await generate(projectDir, config, { quiet });
+	log("Done.");
 }
 
-// CLI entry
-const args = process.argv.slice(2);
-const command = args[0];
-const projectDir = resolve(args[1] ?? ".");
+/** postinstall: quietly regenerate from an existing config. Never creates one. */
+async function postinstall(projectDir: string): Promise<void> {
+	if (!existsSync(join(projectDir, CONFIG_FILENAME))) return;
+	const config = await loadConfig(projectDir);
+	// scaffold:false — never write committed project files (biome.json/tsconfig.json) on install.
+	await generate(projectDir, config, { quiet: true, scaffold: false });
+	console.log("[claude-toolkit] Regenerated .claude/ for the updated toolkit version.");
+}
 
-switch (command) {
-	case "init":
-		await init(projectDir);
-		break;
-	case "sync":
-		await sync(projectDir);
-		break;
-	case "update":
-		await update(projectDir);
-		break;
-	case undefined:
-	case "help":
-		console.log(`
+const HELP = `
 claude-toolkit — Reusable Claude Code configuration
 
-Commands:
-  init    Scaffold config file and generate .claude/ (first-time setup)
-  update  Add newly detected stacks to an existing config, then regenerate
-  sync    Regenerate .claude/ from the current config
-  help    Show this message
-
 Usage:
-  bunx claude-toolkit init [project-dir]
-  bunx claude-toolkit update [project-dir]
-  bunx claude-toolkit sync [project-dir]
-`);
-		break;
-	default:
-		console.error(`Unknown command: ${command}`);
+  bunx claude-toolkit [project-dir]            Create config if missing, then regenerate .claude/
+  bunx claude-toolkit --update [project-dir]   Also add newly-detected stacks to the config
+
+Commands (aliases):
+  init      First-run friendly name (same as the bare command)
+  update    Same as --update
+  sync      Deprecated — use the bare command
+  help      Show this message
+
+Flags:
+  --update, -u   Add newly-detected stacks to the config before regenerating
+  --quiet, -q    Suppress informational output
+
+.claude/ also regenerates automatically on install when the toolkit version changes.
+`;
+
+// ---- entry ----
+const argv = process.argv.slice(2);
+const flags = new Set(argv.filter((a) => a.startsWith("-")));
+const positional = argv.filter((a) => !a.startsWith("-"));
+const COMMANDS = new Set(["init", "update", "sync", "help", "postinstall"]);
+const KNOWN_FLAGS = new Set(["--update", "-u", "--quiet", "-q"]);
+
+// Reject unknown flags so a typo'd flag (e.g. --updat) isn't silently ignored.
+for (const f of flags) {
+	if (!KNOWN_FLAGS.has(f)) {
+		console.error(`Unknown flag: ${f}\nRun "bunx claude-toolkit help".`);
 		process.exit(1);
+	}
+}
+
+const first = positional[0];
+// A positional is treated as a project dir only when it's path-like (".", "..",
+// "./x", or contains a separator) AND exists — so a typo'd command that happens to
+// match a sibling dir name errors instead of silently generating in the wrong place.
+const looksLikePath = (s: string) =>
+	s === "." || s === ".." || s.startsWith(".") || /[\\/]/.test(s);
+let command: string | undefined;
+let dirArg: string | undefined;
+if (first && COMMANDS.has(first)) {
+	command = first;
+	dirArg = positional[1];
+} else if (first && looksLikePath(first) && existsSync(resolve(first))) {
+	dirArg = first; // explicit project dir
+} else if (first) {
+	console.error(`Unknown command: ${first}\nRun "bunx claude-toolkit help".`);
+	process.exit(1);
+}
+
+const projectDir = resolve(dirArg ?? ".");
+const wantUpdate = command === "update" || flags.has("--update") || flags.has("-u");
+const quiet = flags.has("--quiet") || flags.has("-q");
+
+try {
+	switch (command) {
+		case "help":
+			console.log(HELP);
+			break;
+		case "postinstall":
+			await postinstall(projectDir);
+			break;
+		case "sync":
+			if (!quiet) {
+				console.log('Note: "sync" is deprecated — just run "bunx claude-toolkit".');
+			}
+			await run(projectDir, { update: wantUpdate, quiet });
+			break;
+		default:
+			// undefined (bare command), "init", or "update"
+			await run(projectDir, { update: wantUpdate, quiet });
+			break;
+	}
+} catch (err) {
+	console.error(`Error: ${(err as Error).message}`);
+	process.exit(1);
 }

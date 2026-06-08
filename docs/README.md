@@ -2,6 +2,10 @@
 
 Complete reference for all skills, commands, and agents provided by claude-toolkit.
 
+## Setup
+
+Run `bunx claude-toolkit` in your project — on the first run it creates `claude-toolkit.config.ts` (pre-filled from stack detection) and generates `.claude/`. Run it again anytime to regenerate; add `--update` to pull newly-detected stacks into the config. `.claude/` also regenerates automatically on install when the toolkit version changes. See the [README](../README.md#cli-commands) for the full CLI.
+
 ## Core Skills
 
 Skills that are always included regardless of stack configuration.

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.10.0 (2026-06-09)
+
+One idempotent CLI command replaces `init`/`update`/`sync`, and `.claude/` now regenerates itself on toolkit upgrade.
+
+- feat: `bunx claude-toolkit` does it all — creates the config from stack detection on the first run, then cleanly regenerates `.claude/` on every run. `--update` pulls newly-detected stacks into the config. `init`/`update`/`sync` remain as back-compat aliases (`sync` deprecated).
+- feat: automatic regeneration on install — a `postinstall` hook rebuilds `.claude/` when the installed toolkit version changes, so an upgrade ships its updated skills without running anything. Never fails the consumer's install and never writes committed files.
+- feat: clean rebuilds — generation removes toolkit-owned (`ct-` prefixed) skills, agents, commands, and hooks before regenerating, so a stack removed from the config leaves no stale skills behind; user-authored files in `.claude/` are preserved.
+- feat: stricter CLI parsing — unknown flags and typo'd commands now error instead of silently doing nothing; added `--quiet`/`-q`.
+- docs: README and reference docs updated for the single-command workflow and conventional-commit versioning.
+
 ## 0.9.0 (2026-06-08)
 
 Re-baselined from 0.1.x to reflect accumulated scope: 10 stack connectors, the full `init`/`update`/`sync` CLI, stack auto-detection with drift and monorepo/workspace support, and a complete skill/command/agent/hook system. Versioning is now conventional-commit-driven from this release onward.

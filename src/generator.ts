@@ -1,7 +1,7 @@
-import { copyFile as fsCopyFile } from "node:fs/promises";
+import { copyFile as fsCopyFile, readdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import type { ClaudeToolkitConfig, ResolvedConfig, StackPack } from "./types.js";
-import { copyDir, exists, readJson, writeFileEnsureDir } from "./utils.js";
+import { copyDir, exists, readJson, removePath, writeFileEnsureDir } from "./utils.js";
 
 const TOOLKIT_ROOT = resolve(import.meta.dirname, "..");
 
@@ -48,10 +48,51 @@ async function resolveConfig(config: ClaudeToolkitConfig): Promise<ResolvedConfi
 	return { config, skills, directoryMappings: allMappings, hooks, stacks };
 }
 
+/** Remove only `ct-` prefixed entries in a directory (preserves user-authored files). */
+async function removeCtPrefixed(dir: string): Promise<void> {
+	if (!exists(dir)) return;
+	const entries = await readdir(dir);
+	await Promise.all(
+		entries.filter((e) => e.startsWith("ct-")).map((e) => removePath(join(dir, e))),
+	);
+}
+
+/**
+ * Remove toolkit-generated artifacts from .claude/ before a rebuild, so a stack
+ * removed from the config doesn't leave an orphaned skill behind.
+ *
+ * Scoped to what the toolkit owns: `ct-` prefixed skills/agents, the generated
+ * skills index, the `ct/` command namespace, and the toolkit's own hook files.
+ * `.claude/skills`, `/agents`, and `/hooks` are shared Claude Code namespaces, so
+ * any user-authored files there — and the user files at the .claude root
+ * (settings.local.json, user-team-info.json, tasks/) — are preserved.
+ * (settings.json and .gitignore are single generated files, overwritten by generate.)
+ */
+async function removeGenerated(claudeDir: string): Promise<void> {
+	const coreHooks = join(TOOLKIT_ROOT, "core", "hooks");
+	const hookFiles = exists(coreHooks) ? await readdir(coreHooks) : [];
+	await Promise.all([
+		removeCtPrefixed(join(claudeDir, "skills")),
+		removeCtPrefixed(join(claudeDir, "agents")),
+		removePath(join(claudeDir, "skills", "README.md")),
+		removePath(join(claudeDir, "commands", "ct")),
+		// Toolkit hook files (copied from core/hooks) + the generated skill-rules.json.
+		...hookFiles.map((f) => removePath(join(claudeDir, "hooks", f))),
+		removePath(join(claudeDir, "hooks", "skill-rules.json")),
+	]);
+}
+
 /** Generate the .claude/ directory from resolved config */
-export async function generate(projectDir: string, config: ClaudeToolkitConfig): Promise<void> {
+export async function generate(
+	projectDir: string,
+	config: ClaudeToolkitConfig,
+	options: { quiet?: boolean; scaffold?: boolean } = {},
+): Promise<void> {
 	const resolved = await resolveConfig(config);
 	const claudeDir = join(projectDir, ".claude");
+
+	// 0. Clean previously-generated output so removed stacks don't leave stale skills.
+	await removeGenerated(claudeDir);
 
 	// 1. Copy core hooks
 	await copyDir(join(TOOLKIT_ROOT, "core", "hooks"), join(claudeDir, "hooks"));
@@ -92,18 +133,30 @@ export async function generate(projectDir: string, config: ClaudeToolkitConfig):
 			"# Task-specific context",
 			"tasks/",
 			"",
+			"# Toolkit regeneration marker",
+			".toolkit-version",
+			"",
 		].join("\n"),
 	);
 
-	// 9. Scaffold base configs
-	await scaffoldConfigs(projectDir, resolved);
+	// 9. Scaffold base configs into the project root (committed files). Skipped for
+	//    automatic/postinstall regeneration so an install never writes committed files.
+	if (options.scaffold !== false) {
+		await scaffoldConfigs(projectDir, resolved, options.quiet);
+	}
 
 	// 10. Generate skills README
 	await generateSkillsReadme(claudeDir, resolved);
 
-	console.log(
-		`Generated .claude/ with ${resolved.stacks.length} stack(s) and ${resolved.skills.length} core skills`,
-	);
+	// Record the toolkit version that produced this output — drives auto-regen on update.
+	const { version } = await readJson<{ version: string }>(join(TOOLKIT_ROOT, "package.json"));
+	await writeFileEnsureDir(join(claudeDir, ".toolkit-version"), `${version}\n`);
+
+	if (!options.quiet) {
+		console.log(
+			`Generated .claude/ with ${resolved.stacks.length} stack(s) and ${resolved.skills.length} core skills`,
+		);
+	}
 }
 
 /** Generate skill-rules.json from resolved config */
@@ -271,7 +324,11 @@ async function generateSettings(claudeDir: string, resolved: ResolvedConfig): Pr
 }
 
 /** Scaffold base config files (biome.json, tsconfig.json) into the project */
-async function scaffoldConfigs(projectDir: string, resolved: ResolvedConfig): Promise<void> {
+async function scaffoldConfigs(
+	projectDir: string,
+	resolved: ResolvedConfig,
+	quiet = false,
+): Promise<void> {
 	if (resolved.config.scaffoldConfigs === false) return;
 
 	const configsDir = join(TOOLKIT_ROOT, "templates", "configs");
@@ -283,10 +340,10 @@ async function scaffoldConfigs(projectDir: string, resolved: ResolvedConfig): Pr
 	for (const { src, dest } of configs) {
 		const destPath = join(projectDir, dest);
 		if (exists(destPath)) {
-			console.log(`  Skipped ${dest} (already exists)`);
+			if (!quiet) console.log(`  Skipped ${dest} (already exists)`);
 		} else {
 			await fsCopyFile(join(configsDir, src), destPath);
-			console.log(`  Scaffolded ${dest}`);
+			if (!quiet) console.log(`  Scaffolded ${dest}`);
 		}
 	}
 }
