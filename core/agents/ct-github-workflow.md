@@ -123,8 +123,12 @@ Keep under 70 characters. The title should tell a reviewer what this PR does wit
 ## Workflow Commands
 
 ```bash
-# Create feature branch from latest main
-git checkout main && git pull && git checkout -b feat/description
+# Resolve the default branch once (main, master, ...)
+BASE=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's@^origin/@@')
+BASE=${BASE:-main}
+
+# Create feature branch from the latest default branch
+git checkout "$BASE" && git pull && git checkout -b feat/description
 
 # Stage and commit with conventional message
 git add {files}
@@ -134,8 +138,8 @@ git commit -m "feat(scope): description"
 git push -u origin HEAD
 gh pr create --title "feat(scope): description" --body "..."
 
-# Update branch with latest main
-git fetch origin main && git rebase origin/main
+# Update branch with the latest default branch
+git fetch origin "$BASE" && git rebase "origin/$BASE"
 ```
 
 ## Principles
