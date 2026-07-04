@@ -1,6 +1,6 @@
 ---
-name: "GitHub Workflow"
-description: "Git workflow assistant for branching, commits, and PRs"
+name: ct-github-workflow
+description: Git workflow assistant for branching, commits, and PRs
 model: sonnet
 ---
 
