@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.11.0 (2026-07-04)
+
+Remediation of the 2026-07-04 core audit (46 findings): the skill-eval hook is hardened, stack-owned commands are gated behind their stack, and the `ct-` agents, commands, skills, and reference docs are corrected and aligned.
+
+- feat: gate stack commands behind their owning stack — `proto-check` moved to the protobuf stack and is only installed when protobuf is detected. The skill hook is now registered as a single command string rather than exec-form args, so it runs correctly on every prompt.
+- fix(hooks): harden the skill-eval hook — correct glob-to-regex conversion, robust file-path extraction with an input cap, defensive config coercion with defaults and clean exit, output sanitization, and verification that referenced skills actually ship. Dropped ghost rules and locked the skill-rules schema with `additionalProperties: false`. Renamed to `.cjs` and exposed a testable module API.
+- fix(agents): register `ct-code-reviewer` and `ct-github-workflow` under their `ct-` names with scoped tool grants; give `ct-github-workflow` a real merge-conflict probe and default-branch resolution.
+- fix(commands): scope `Bash` grants and add `argument-hint` across `code-quality`, `onboard`, `ticket`, and `pr-summary`; `pr-review` now fetches the PR diff and delegates to `ct-code-reviewer`.
+- fix(skills): correct the `satisfies` example, align type-vs-interface guidance with best-practices, narrow E2E scope, and add edge cases plus "Use-when" triggers to the debugging and verification skills.
+- docs: add `CLAUDE.md` architecture guide, regenerate testing-patterns from the current skill, correct command invocation names to `/ct:`, and mirror the doc references to the moved/renamed assets.
+- chore: add `.gitattributes` to normalize line endings to LF across platforms.
+
 ## 0.10.0 (2026-06-09)
 
 One idempotent CLI command replaces `init`/`update`/`sync`, and `.claude/` now regenerates itself on toolkit upgrade.
