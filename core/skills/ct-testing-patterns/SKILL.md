@@ -1,6 +1,6 @@
 ---
 name: ct-testing-patterns
-description: Generic test-driven development practices and patterns applicable to any language or test framework.
+description: Generic test-driven development practices and patterns applicable to any language or test framework. Use when writing tests, setting up a test suite, or deciding what to test at which layer
 ---
 
 # Testing Patterns
@@ -27,6 +27,8 @@ description: Generic test-driven development practices and patterns applicable t
 | Unit        | ~70%         | Business logic, utilities, data transforms, reactive primitives, error paths |
 | Interaction | ~20%         | Component variants, user interactions, accessibility, visual regression      |
 | E2E         | ~10%         | Critical user journeys, authentication flows, cross-page workflows           |
+
+> **Scope:** This core skill owns the layering _decision_ below, the unit and interaction layers, and the cross-cutting E2E principles. Runner-specific E2E setup and execution live in the stack skills (e.g. `ct-playwright-patterns`) when a matching stack is installed.
 
 ### When to Use Which Layer
 
@@ -103,13 +105,9 @@ bun test path/to/file.test.ts  # single file
 
 Bun supports `describe`, `it`/`test`, `expect`, lifecycle hooks, and snapshot testing out of the box with no additional dependencies.
 
-## Test Pyramid
-
-See 3-Layer Testing Strategy above. Many unit tests (fast, focused) > some interaction tests (component sandbox) > few E2E tests (full flow). Aim for 70/20/10 distribution.
-
 ## Test Speed
 
-Three levers recur across every runner (Vitest, Playwright, Storybook browser mode). Stated once here; each stack skill carries the framework-specific syntax.
+Three levers recur across common runners (Vitest, Playwright, Storybook browser mode). Stated once here; each stack skill carries the framework-specific syntax.
 
 - **Parallelism sized to the runner.** Enable file-level parallelism (Vitest `fileParallelism`, Playwright `fullyParallel`), but cap workers to the runner's *real* vCPUs (`"50%"` or a measured count). GitHub standard runners are 2 vCPU (private) / 4 (public); oversubscribing thrashes.
 - **Shard across CI jobs, then merge the blob reports.** Sharding splits at the *file* level (`--shard=i/n`), so wall-clock is gated by the slowest shard -- balance file sizes. Always emit a blob report per shard (`--reporter=blob`) and merge it (`merge-reports` / `--merge-reports`) in a dependent job, or results and coverage are fragmented and incomplete.
@@ -117,7 +115,7 @@ Three levers recur across every runner (Vitest, Playwright, Storybook browser mo
 
 Profile before tuning, and never `sleep` to mask timing -- use the framework's auto-waiting (see Shared Principles).
 
-Per-runner config: `ct-vite-vitest-patterns`, `ct-playwright-patterns`, `ct-storybook-patterns`.
+Per-runner config, if the corresponding stack is installed: `ct-vite-vitest-patterns`, `ct-playwright-patterns`, `ct-storybook-patterns`.
 
 ## Anti-Patterns
 
