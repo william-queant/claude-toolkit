@@ -1,6 +1,6 @@
 ---
 name: ct-systematic-debugging
-description: Four-phase methodology for diagnosing and fixing bugs efficiently without guesswork.
+description: Four-phase methodology for diagnosing and fixing bugs efficiently without guesswork. Use when investigating a bug, test failure, or unexpected behavior before proposing a fix
 ---
 
 # Systematic Debugging
