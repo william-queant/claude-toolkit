@@ -29,7 +29,7 @@ const [data] = createResource(userId, fetchUser); // async: data(), data.loading
 
 ## Props
 
-**CRITICAL: Never destructure props.** Destructuring breaks reactivity.
+**CRITICAL: Never destructure props.** Destructuring breaks reactivity. (This overrides the general "use destructuring" guidance in `ct-code-style` — destructure plain data, never reactive `props`.)
 
 ```tsx
 // WRONG -- reads once, never updates
