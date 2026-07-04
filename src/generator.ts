@@ -296,9 +296,8 @@ async function generateSettings(claudeDir: string, resolved: ResolvedConfig): Pr
 					hooks: [
 						{
 							type: "command",
-							command: "node",
 							// biome-ignore lint/suspicious/noTemplateCurlyInString: Claude Code substitutes ${CLAUDE_PROJECT_DIR} at hook-run time; this must be a literal placeholder string.
-							args: ["${CLAUDE_PROJECT_DIR}/.claude/hooks/skill-eval.cjs"],
+							command: 'node "${CLAUDE_PROJECT_DIR}/.claude/hooks/skill-eval.cjs"',
 							timeout: 5,
 						},
 					],
