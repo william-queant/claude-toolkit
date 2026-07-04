@@ -3,8 +3,8 @@
 > Validate protobuf definitions for correctness, lint compliance, and backward compatibility.
 
 **Type:** Command (slash command)
-**Source:** [`core/commands/ct/proto-check.md`](../core/commands/ct/proto-check.md)
-**Allowed Tools:** Bash, Read, Glob, Grep
+**Source:** [`stacks/protobuf/commands/proto-check.md`](../stacks/protobuf/commands/proto-check.md) (installed only with the protobuf stack)
+**Allowed Tools:** Bash (scoped to `buf`/`protoc` and build commands), Read, Glob, Grep
 
 ## Usage
 

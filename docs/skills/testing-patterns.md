@@ -113,10 +113,6 @@ bun test path/to/file.test.ts  # single file
 
 Bun supports `describe`, `it`/`test`, `expect`, lifecycle hooks, and snapshot testing out of the box with no additional dependencies.
 
-## Test Pyramid
-
-See the 3-Layer Testing Strategy above. Many unit tests (fast, focused) > some interaction tests (component sandbox) > few E2E tests (full flow). Aim for a 70/20/10 distribution.
-
 ## Test Speed
 
 Three levers recur across common runners (Vitest, Playwright, Storybook browser mode). Stated once here; each stack skill carries the framework-specific syntax.
