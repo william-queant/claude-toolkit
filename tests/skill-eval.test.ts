@@ -69,3 +69,58 @@ describe("extractFilePaths (F08, F22, F23, F37, F09)", () => {
 		expect(extractFilePaths("src/real.ts")).toEqual(["src/real.ts"]);
 	});
 });
+
+const { evaluate } = engine;
+
+// A minimal ruleset with a single skill that keyword-matches "flurble".
+function makeRules(overrides = {}) {
+	return {
+		config: {
+			minConfidenceScore: 3,
+			showMatchReasons: true,
+			maxSkillsToShow: 5,
+			...overrides,
+		},
+		scoring: {
+			keyword: 5,
+			keywordPattern: 3,
+			pathPattern: 4,
+			directoryMatch: 5,
+			intentPattern: 4,
+			contentPattern: 3,
+			contextPattern: 2,
+		},
+		directoryMappings: {},
+		skills: {
+			"ct-testing-patterns": {
+				description: "x",
+				priority: 5,
+				triggers: { keywords: ["flurble"] },
+			},
+		},
+	};
+}
+
+// ct-testing-patterns actually ships under core/skills, so the ship-check passes.
+const SKILLS_DIR = new URL("../core/skills", import.meta.url).pathname;
+
+describe("evaluate hardening (F21, F34)", () => {
+	test("coerces a non-string prompt instead of crashing (F21)", () => {
+		// Must not throw; a number has no keywords, so output is empty.
+		expect(evaluate(12345, { rules: makeRules(), skillsDir: SKILLS_DIR })).toBe("");
+	});
+
+	test("applies config defaults when config is absent (F34)", () => {
+		const rules = makeRules();
+		rules.config = undefined; // no minConfidenceScore / maxSkillsToShow at all
+		const out = evaluate("please flurble this", {
+			rules,
+			skillsDir: SKILLS_DIR,
+		});
+		expect(out).toContain("ct-testing-patterns");
+	});
+
+	test("returns empty string when rules cannot be loaded", () => {
+		expect(evaluate("flurble", { rules: null, skillsDir: SKILLS_DIR })).toBe("");
+	});
+});

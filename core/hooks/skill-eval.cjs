@@ -39,7 +39,7 @@ function loadRules() {
 		return JSON.parse(content);
 	} catch (error) {
 		console.error(`Failed to load skill rules: ${error.message}`);
-		process.exit(0);
+		return null;
 	}
 }
 
@@ -268,17 +268,27 @@ function formatConfidence(score, minScore) {
 /**
  * Main evaluation function
  */
-function evaluate(prompt) {
-	const rules = loadRules();
-	const { config, skills } = rules;
+function evaluate(prompt, opts = {}) {
+	const rules = opts.rules !== undefined ? opts.rules : loadRules();
+	if (!rules || !rules.skills) return "";
+	const skillsDir = opts.skillsDir ?? path.join(__dirname, "..", "skills");
 
-	const promptLower = prompt.toLowerCase();
-	const filePaths = extractFilePaths(prompt);
+	const {
+		minConfidenceScore = 3,
+		maxSkillsToShow = 5,
+		showMatchReasons = true,
+	} = rules.config ?? {};
+
+	// Cap the text before the pattern scans (F09), and coerce non-strings (F21).
+	const cappedPrompt = String(prompt).slice(0, MAX_PROMPT_LENGTH);
+	const promptLower = cappedPrompt.toLowerCase();
+	const filePaths = extractFilePaths(cappedPrompt);
+	const skills = rules.skills;
 
 	const matches = [];
 	for (const [name, skill] of Object.entries(skills)) {
-		const match = evaluateSkill(name, skill, prompt, promptLower, filePaths, rules);
-		if (match && match.score >= config.minConfidenceScore) {
+		const match = evaluateSkill(name, skill, cappedPrompt, promptLower, filePaths, rules);
+		if (match && match.score >= minConfidenceScore) {
 			matches.push(match);
 		}
 	}
@@ -292,7 +302,7 @@ function evaluate(prompt) {
 		return b.priority - a.priority;
 	});
 
-	const topMatches = matches.slice(0, config.maxSkillsToShow);
+	const topMatches = matches.slice(0, maxSkillsToShow);
 	const relatedSkills = getRelatedSkills(topMatches, skills);
 
 	let output = "<user-prompt-submit-hook>\n";
@@ -306,9 +316,9 @@ function evaluate(prompt) {
 
 	for (let i = 0; i < topMatches.length; i++) {
 		const match = topMatches[i];
-		const confidence = formatConfidence(match.score, config.minConfidenceScore);
+		const confidence = formatConfidence(match.score, minConfidenceScore);
 		output += `${i + 1}. ${match.name} (${confidence} confidence)\n`;
-		if (config.showMatchReasons && match.reasons.length > 0) {
+		if (showMatchReasons && match.reasons.length > 0) {
 			output += `   Matched: ${match.reasons.slice(0, 3).join(", ")}\n`;
 		}
 	}
@@ -342,18 +352,25 @@ function main() {
 		input += chunk;
 	});
 
+	// F36: never leave stdin errors unhandled (would otherwise hang to the hook timeout).
+	process.stdin.on("error", () => {
+		process.exitCode = 0;
+	});
+
 	process.stdin.on("end", () => {
 		let prompt = "";
 
 		try {
 			const data = JSON.parse(input);
-			prompt = data.prompt || "";
+			// F21: only accept a string prompt; anything else is treated as empty.
+			prompt = typeof data.prompt === "string" ? data.prompt : "";
 		} catch {
 			prompt = input;
 		}
 
-		if (!prompt.trim()) {
-			process.exit(0);
+		if (typeof prompt !== "string" || !prompt.trim()) {
+			process.exitCode = 0;
+			return;
 		}
 
 		try {
@@ -365,7 +382,9 @@ function main() {
 			console.error(`Skill evaluation failed: ${error.message}`);
 		}
 
-		process.exit(0);
+		// F35: set exitCode and let the process drain stdout naturally rather than
+		// process.exit(0), which can truncate a large console.log on POSIX pipes.
+		process.exitCode = 0;
 	});
 }
 
