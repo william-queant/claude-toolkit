@@ -107,6 +107,7 @@ Stacks in your config that are no longer detected are reported but left unchange
 | `playwright`      | Playwright E2E testing, Page Objects, fixtures, CI/CD              |
 | `storybook`       | Storybook interaction testing, CSF 3, visual regression            |
 | `capacitor`       | Capacitor 8 runtime, Capgo OTA, channels; webview UI & native feel |
+| `esnext`          | Modern ECMAScript idioms — Temporal, iterator helpers, `using`, structuredClone |
 
 ## Core Features (always included)
 
@@ -122,6 +123,7 @@ Stacks in your config that are no longer detected are reported but left unchange
 - `ct-testing-patterns` — TDD workflow and patterns
 - `ct-typescript-conventions` — TypeScript strict mode best practices
 - `ct-verification-before-completion` — Evidence-based completion claims
+- `ct-code-style` — Code structure & style: guard clauses, lookup tables, no magic values
 
 ### Core Commands
 
