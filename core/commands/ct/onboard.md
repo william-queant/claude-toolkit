@@ -1,7 +1,12 @@
 ---
-description: "Onboard yourself to a codebase area or task"
+description: Onboard yourself to a codebase area or task
+argument-hint: "[area]"
 allowed-tools:
-  - Bash
+  - Bash(git log:*)
+  - Bash(git ls-files:*)
+  - Bash(git remote:*)
+  - Bash(ls:*)
+  - Bash(find:*)
   - Read
   - Glob
   - Grep
@@ -13,7 +18,7 @@ Systematically explore and understand a codebase area, module, or task context. 
 
 ## Workflow
 
-1. **Understand the scope.** The user will specify an area (e.g., "the auth module", "the payments flow", "this repo"). If no scope is given, start from the project root.
+1. **Understand the scope.** The scope is given by `$ARGUMENTS` (e.g., "the auth module", "the payments flow", "this repo"). If `$ARGUMENTS` is empty, start from the project root.
 
 2. **Read foundational files first:**
    - `README.md`, `CLAUDE.md`, `CONTRIBUTING.md` (project conventions)
