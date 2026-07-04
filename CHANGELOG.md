@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.15.0 (2026-07-04)
+
+- feat: enforce code-style rules in scaffolded biome config
+
 ## 0.14.0 (2026-07-04)
 
 - feat: add ct-code-style core skill
