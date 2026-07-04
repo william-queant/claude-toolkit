@@ -37,3 +37,35 @@ describe("matchesGlob (F01, F24)", () => {
 		expect(matchesGlob("src/{a,b}/x.ts", "src/{a,b}/*.ts")).toBe(true);
 	});
 });
+
+const { extractFilePaths } = engine;
+
+describe("extractFilePaths (F08, F22, F23, F37, F09)", () => {
+	test("detects Windows backslash paths (F08)", () => {
+		expect(extractFilePaths("edit src\\components\\Button.tsx please")).toEqual([
+			"src/components/Button.tsx",
+		]);
+	});
+
+	test("detects paths in parentheses and after commas (F22)", () => {
+		expect(extractFilePaths("see (src/utils/helper.ts)")).toEqual(["src/utils/helper.ts"]);
+		expect(extractFilePaths("update tsconfig.json,package.json now")).toEqual([
+			"tsconfig.json",
+			"package.json",
+		]);
+	});
+
+	test('does NOT extract numeric ratios like "3/4" (F23)', () => {
+		expect(extractFilePaths('the ratio was "3/4" exactly')).toEqual([]);
+	});
+
+	test("still detects .css.ts via the .ts branch (F37 dead-code removal)", () => {
+		expect(extractFilePaths("check src/app/theme.css.ts")).toEqual(["src/app/theme.css.ts"]);
+	});
+
+	test("caps input length so a path past the cap is ignored (F09)", () => {
+		const filler = "x".repeat(60_000);
+		expect(extractFilePaths(`${filler} src/real.ts`)).toEqual([]);
+		expect(extractFilePaths("src/real.ts")).toEqual(["src/real.ts"]);
+	});
+});

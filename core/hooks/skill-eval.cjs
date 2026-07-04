@@ -17,6 +17,10 @@ const path = require("node:path");
 // Configuration
 const RULES_PATH = path.join(__dirname, "skill-rules.json");
 
+// Cap the text handed to the (potentially quadratic) regex scans. Long single-line
+// pastes — minified bundles, one-line JSON — can otherwise blow past the 5s hook timeout.
+const MAX_PROMPT_LENGTH = 50_000;
+
 /**
  * @typedef {Object} SkillMatch
  * @property {string} name - Skill name
@@ -45,29 +49,33 @@ function loadRules() {
  * @returns {string[]} Array of detected file paths
  */
 function extractFilePaths(prompt) {
+	// Normalize backslashes so Windows paths match, and cap length for the regex scans.
+	const text = String(prompt).slice(0, MAX_PROMPT_LENGTH).replace(/\\/g, "/");
 	const paths = new Set();
 
-	// Match explicit paths with extensions
+	// Match explicit paths with extensions. Negative lookbehind lets a candidate start
+	// after any non-path delimiter — "(", ",", ":", "=", whitespace, quotes, or BOL.
 	const extensionPattern =
-		/(?:^|\s|["'`])([\w\-./]+\.(?:[tj]sx?|json|gql|ya?ml|md|sh|rs|proto|toml|css\.ts|wasm))\b/gi;
-	for (const match of prompt.matchAll(extensionPattern)) {
+		/(?<![\w\-./])([\w\-./]+\.(?:[tj]sx?|json|gql|ya?ml|md|sh|rs|proto|toml|wasm))\b/gi;
+	for (const match of text.matchAll(extensionPattern)) {
 		paths.add(match[1]);
 	}
 
-	// Match paths starting with common directories
+	// Match paths starting with common directories.
 	const dirPattern =
-		/(?:^|\s|["'`])((?:src|app|components|worker|workers|proto|hooks|utils|services|styles|locales|tests|\.claude|\.github)\/[\w\-./]+)/gi;
-	for (const match of prompt.matchAll(dirPattern)) {
+		/(?<![\w\-./])((?:src|app|components|worker|workers|proto|hooks|utils|services|styles|locales|tests|\.claude|\.github)\/[\w\-./]+)/gi;
+	for (const match of text.matchAll(dirPattern)) {
 		paths.add(match[1]);
 	}
 
-	// Match quoted paths
+	// Match quoted paths.
 	const quotedPattern = /["'`]([\w\-./]+\/[\w\-./]+)["'`]/g;
-	for (const match of prompt.matchAll(quotedPattern)) {
+	for (const match of text.matchAll(quotedPattern)) {
 		paths.add(match[1]);
 	}
 
-	return Array.from(paths);
+	// Require at least one letter so ratios/fractions like "3/4" are not treated as paths.
+	return Array.from(paths).filter((p) => /[A-Za-z]/.test(p));
 }
 
 /**
