@@ -1,7 +1,25 @@
 ---
-description: "Run code quality checks on a directory or file"
+description: Run code quality checks on a directory or file
+argument-hint: "[path]"
 allowed-tools:
-  - Bash
+  - Bash(eslint:*)
+  - Bash(tsc:*)
+  - Bash(prettier:*)
+  - Bash(biome:*)
+  - Bash(ruff:*)
+  - Bash(mypy:*)
+  - Bash(pyright:*)
+  - Bash(black:*)
+  - Bash(cargo clippy:*)
+  - Bash(cargo check:*)
+  - Bash(rustfmt:*)
+  - Bash(gofmt:*)
+  - Bash(go vet:*)
+  - Bash(golangci-lint:*)
+  - Bash(npm run:*)
+  - Bash(pnpm:*)
+  - Bash(bun run:*)
+  - Bash(yarn:*)
   - Read
   - Glob
   - Grep
@@ -10,6 +28,8 @@ allowed-tools:
 # Code Quality Check
 
 Run lint, typecheck, and format checks against the target directory or file. Report all issues found and suggest fixes.
+
+**Target:** `$ARGUMENTS` (defaults to the current directory if empty).
 
 ## Workflow
 
