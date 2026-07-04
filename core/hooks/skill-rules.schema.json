@@ -17,6 +17,7 @@
 		"config": {
 			"type": "object",
 			"description": "Global configuration options",
+			"additionalProperties": false,
 			"required": ["minConfidenceScore", "showMatchReasons", "maxSkillsToShow"],
 			"properties": {
 				"minConfidenceScore": {
@@ -39,6 +40,7 @@
 		"scoring": {
 			"type": "object",
 			"description": "Points assigned to each match type",
+			"additionalProperties": false,
 			"required": [
 				"keyword",
 				"keywordPattern",
@@ -68,6 +70,7 @@
 			"description": "Skill definitions and their triggers",
 			"additionalProperties": {
 				"type": "object",
+				"additionalProperties": false,
 				"required": ["description", "triggers"],
 				"properties": {
 					"description": { "type": "string" },
@@ -79,6 +82,7 @@
 					},
 					"triggers": {
 						"type": "object",
+						"additionalProperties": false,
 						"properties": {
 							"keywords": { "type": "array", "items": { "type": "string" } },
 							"keywordPatterns": {
