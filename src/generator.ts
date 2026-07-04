@@ -79,6 +79,10 @@ async function removeGenerated(claudeDir: string): Promise<void> {
 		// Toolkit hook files (copied from core/hooks) + the generated skill-rules.json.
 		...hookFiles.map((f) => removePath(join(claudeDir, "hooks", f))),
 		removePath(join(claudeDir, "hooks", "skill-rules.json")),
+		// Stale files from prior installs: skill-eval.js was renamed to .cjs, and the
+		// skill-eval.sh wrapper was dropped in favour of exec-form node registration.
+		removePath(join(claudeDir, "hooks", "skill-eval.js")),
+		removePath(join(claudeDir, "hooks", "skill-eval.sh")),
 	]);
 }
 
@@ -292,7 +296,8 @@ async function generateSettings(claudeDir: string, resolved: ResolvedConfig): Pr
 					hooks: [
 						{
 							type: "command",
-							command: '"$CLAUDE_PROJECT_DIR"/.claude/hooks/skill-eval.sh',
+							command: "node",
+							args: ["${CLAUDE_PROJECT_DIR}/.claude/hooks/skill-eval.cjs"],
 							timeout: 5,
 						},
 					],
