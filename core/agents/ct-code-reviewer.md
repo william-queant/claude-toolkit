@@ -76,7 +76,7 @@ You are a senior code reviewer. Your job is to review code changes thoroughly, p
 
 ## Output Format
 
-```markdown
+````markdown
 ## Code Review
 
 **Reviewed:** {files or PR description}
@@ -113,7 +113,7 @@ You are a senior code reviewer. Your job is to review code changes thoroughly, p
 
 ### Summary
 {1-3 sentence overall assessment. Be direct.}
-```
+````
 
 ## Principles
 
