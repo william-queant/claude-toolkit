@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.0 (2026-07-04)
+
+- feat: add esnext stack with ct-esnext-idioms skill
+
 ## 0.12.0 (2026-07-04)
 
 - feat: detect esnext stack via tsconfig/type-module/engines/.mjs

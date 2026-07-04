@@ -1,0 +1,37 @@
+{
+	"name": "ct-esnext-idioms",
+	"description": "Modern ECMAScript runtime idioms — Temporal, iterator helpers, using, structuredClone",
+	"defaultMappings": {},
+	"fileExtensions": ["mjs", "cjs"],
+	"skillRules": {
+		"ct-esnext-idioms": {
+			"description": "Modern ECMAScript runtime idioms and features",
+			"priority": 5,
+			"triggers": {
+				"keywords": [
+					"Temporal",
+					"structuredClone",
+					"iterator",
+					"using",
+					"dispose",
+					"groupBy",
+					"withResolvers",
+					"AbortSignal",
+					"fromAsync",
+					"esnext",
+					"moment",
+					"date"
+				],
+				"keywordPatterns": ["\\bTemporal\\b", "\\busing\\b", "\\bstructuredClone\\b"],
+				"contentPatterns": [
+					"new Date\\(",
+					"JSON\\.parse\\(JSON\\.stringify",
+					"__dirname",
+					"\\.groupBy\\("
+				],
+				"intentPatterns": ["(?:format|parse|manipulate).*date", "(?:clone|copy).*(?:object|deep)"]
+			},
+			"relatedSkills": ["ct-typescript-conventions", "ct-code-style"]
+		}
+	}
+}
