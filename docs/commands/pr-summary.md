@@ -1,4 +1,4 @@
-# /pr-summary
+# /ct:pr-summary
 
 > Generate a structured pull request summary from the current branch.
 
@@ -9,7 +9,7 @@
 ## Usage
 
 ```
-/pr-summary
+/ct:pr-summary
 ```
 
 ## Workflow

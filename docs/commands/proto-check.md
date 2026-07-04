@@ -1,4 +1,4 @@
-# /proto-check
+# /ct:proto-check
 
 > Validate protobuf definitions for correctness, lint compliance, and backward compatibility.
 
@@ -9,7 +9,7 @@
 ## Usage
 
 ```
-/proto-check
+/ct:proto-check
 ```
 
 ## Workflow

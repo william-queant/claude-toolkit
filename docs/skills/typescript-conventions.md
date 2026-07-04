@@ -1,6 +1,6 @@
 # TypeScript Conventions
 
-> Strict TypeScript patterns for type safety, readability, and maintainable codebases.
+> Strict TypeScript patterns for type safety, readability, and maintainable codebases. Use when writing or reviewing TypeScript, adding or tightening types, or deciding between type and interface
 
 **Type:** Core Skill (always included)
 **Source:** [`core/skills/ct-typescript-conventions/SKILL.md`](../core/skills/ct-typescript-conventions/SKILL.md)
@@ -36,21 +36,29 @@ Never use `any`. It disables type checking entirely.
 - Use generics when the type varies but has a consistent shape
 - Use specific types when you know the data shape
 
-### Interface vs Type
+### Type vs Interface
 
-- **Prefer `interface`** for object shapes -- extendable, clearer error messages
-- **Use `type`** for unions, intersections, mapped types, and utility types
+- **Default to `type`.** It covers object shapes, unions, intersections, mapped types, and utility types.
+- **Use `interface` only when you need `extends`** (an inheritance hierarchy or declaration merging).
 
 ```typescript
-// Object shape: use interface
-interface User {
+// Default: use type for object shapes
+type User = {
   id: string;
   email: string;
   role: UserRole;
-}
+};
 
-// Union: use type
+// Unions, intersections, utilities: type
 type UserRole = "admin" | "member" | "guest";
+
+// interface only when you need extends
+interface Animal {
+  name: string;
+}
+interface Dog extends Animal {
+  breed: string;
+}
 ```
 
 ### `as const` for Literal Types
@@ -96,7 +104,7 @@ type AsyncState<T> =
 
 ### `satisfies` Operator
 
-Validate a value conforms to a type without widening its inferred type:
+Validate a value conforms to a type while keeping the value's own narrower inferred type instead of collapsing to the annotation. Here it preserves the exact key set (`home`, `user`) rather than the index signature `Record<string, Route>`:
 
 ```typescript
 type Route = { path: string; children?: Route[] };
@@ -106,7 +114,9 @@ const routes = {
   user: { path: "/user/:id", children: [{ path: "settings" }] },
 } satisfies Record<string, Route>;
 
-// routes.home.path is "/" (literal), not string
+// routes.home and routes.user are known keys -- not `Route | undefined` from the index signature.
+// Note: routes.home.path is `string`, NOT the literal "/", because `Route` declares `path: string`,
+// which widens the literal. To keep a literal, target a narrower type (e.g. a union) or add `as const`.
 ```
 
 ### `const` Type Parameters
@@ -115,6 +125,9 @@ Infer literal types from arguments without requiring callers to write `as const`
 
 ```typescript
 function createConfig<const T extends readonly string[]>(names: T): Record<T[number], boolean> {
+  // `Object.fromEntries` is typed to return a wide `Record<string, boolean>`, so a single
+  // localized `as` at a generic helper's return boundary is acceptable here -- it keeps the
+  // public signature precise. This is the narrow exception to the "no `as` casts" anti-pattern.
   return Object.fromEntries(names.map(n => [n, false])) as Record<T[number], boolean>;
 }
 
