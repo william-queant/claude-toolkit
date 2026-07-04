@@ -98,7 +98,7 @@ const makeCounter = () => {
 };
 ```
 
-**⚠️ Exception:** use `class` / `this` only when a third-party lib or platform leaves no functional alternative — e.g. Cloudflare Durable Objects / `WorkerEntrypoint` (`export class extends DurableObject`), or subclassing built-ins (`class AppError extends Error`). See `ct-cloudflare`, `ct-durable-objects`.
+**⚠️ Exception:** use `class` / `this` only when a third-party lib or platform leaves no functional alternative — e.g. Cloudflare Durable Objects / `WorkerEntrypoint` (`export class Room extends DurableObject`), or subclassing built-ins (`class AppError extends Error`). See `ct-cloudflare-d1-kv`.
 
 ## No magic numbers or strings
 
