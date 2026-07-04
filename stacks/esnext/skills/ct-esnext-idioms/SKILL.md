@@ -49,11 +49,11 @@ const firstThree = users.values()
   .take(3)
   .toArray();                        // only 3 names ever materialised
 
-const merged = Iterator.concat(pageA.values(), pageB.values());
+const merged = Iterator.concat(pageA.values(), pageB.values()); // Iterator Sequencing — Stage 4 (2025); polyfill on older runtimes
 const rows = await Array.fromAsync(streamRows());   // async iterable → array
 ```
 
-_Availability: Node 22+ / modern browsers._ Replaces `[...a, ...b].filter().map().slice()`, which allocates at every step.
+_Availability: standard iterator helpers (`.filter`/`.map`/`.take`) and `Array.fromAsync` are Node 22+ / modern browsers; `Iterator.concat` is newer (Iterator Sequencing, 2025) — polyfill until it lands._ Replaces `[...a, ...b].filter().map().slice()`, which allocates at every step.
 
 ## Clone & group
 
