@@ -1,7 +1,16 @@
 ---
-description: "Validate protobuf definitions and check for breaking changes"
+description: Validate protobuf definitions and check for breaking changes
 allowed-tools:
-  - Bash
+  - Bash(buf:*)
+  - Bash(protoc:*)
+  - Bash(npm run:*)
+  - Bash(pnpm:*)
+  - Bash(bun run:*)
+  - Bash(yarn:*)
+  - Bash(tsc:*)
+  - Bash(cargo build:*)
+  - Bash(cargo check:*)
+  - Bash(go build:*)
   - Read
   - Glob
   - Grep

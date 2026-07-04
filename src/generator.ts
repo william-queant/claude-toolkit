@@ -118,6 +118,16 @@ export async function generate(
 		}
 	}
 
+	// 5b. Copy stack-specific commands into the ct/ namespace. Only installs when
+	//     the owning stack is active; removeGenerated() already deletes the whole
+	//     .claude/commands/ct dir each rebuild, so a removed stack leaves no orphan.
+	for (const stackName of config.stacks) {
+		const stackCommandsDir = join(TOOLKIT_ROOT, "stacks", stackName, "commands");
+		if (exists(stackCommandsDir)) {
+			await copyDir(stackCommandsDir, join(claudeDir, "commands", "ct"));
+		}
+	}
+
 	// 6. Generate skill-rules.json
 	await generateSkillRules(claudeDir, resolved);
 
