@@ -1,4 +1,4 @@
-# /pr-review
+# /ct:pr-review
 
 > Perform a checklist-based code review on the current PR or a specified PR number.
 
@@ -9,7 +9,7 @@
 ## Usage
 
 ```bash
-/pr-review [pr-number]
+/ct:pr-review [pr-number]
 ```
 
 If no PR number is provided, diffs the current branch against the base branch.
@@ -82,17 +82,6 @@ The command evaluates all changed files against these criteria:
 ### Positive Notes
 ### Summary
 ```
-
-## Best Practices Reference
-
-Review criteria informed by these guides:
-
-| Review Area | Guide |
-| --- | --- |
-| Type safety: `any` usage, unsafe casts | [any & unknown](../best-practices/typescript/any-and-unknown.md) |
-| State modeling with unions | [Discriminated Unions](../best-practices/typescript/discriminated-unions.md) |
-| SolidJS-specific issues (props, reactivity) | [SolidJS Anti-Patterns](../best-practices/solidjs/anti-patterns.md) |
-| Performance: re-renders, reactivity mistakes | [SolidJS Performance](../best-practices/solidjs/performance.md) |
 
 ## Notes
 

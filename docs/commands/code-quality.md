@@ -1,4 +1,4 @@
-# /code-quality
+# /ct:code-quality
 
 > Run code quality checks (lint, typecheck, format) on a directory or file.
 
@@ -9,7 +9,7 @@
 ## Usage
 
 ```bash
-/code-quality [path]
+/ct:code-quality [path]
 ```
 
 ## Workflow
@@ -28,12 +28,6 @@ The command produces a structured report with:
 - **Type Errors** -- table with file, line, and message
 - **Format Issues** -- table with file and status
 - **Summary** -- total issues across files with actionable suggestions
-
-## Best Practices Reference
-
-| Topic | Guide |
-| --- | --- |
-| Recommended `tsconfig.json` settings | [TSConfig Cheat Sheet](../best-practices/typescript/tsconfig-cheat-sheet.md) |
 
 ## Notes
 

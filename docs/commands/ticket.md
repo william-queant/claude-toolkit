@@ -1,4 +1,4 @@
-# /ticket
+# /ct:ticket
 
 > Work end-to-end on a ticket or issue: understand, explore, plan, implement, deliver.
 
@@ -9,7 +9,7 @@
 ## Usage
 
 ```
-/ticket [issue-number-or-description]
+/ct:ticket [issue-number-or-description]
 ```
 
 ## Phases
