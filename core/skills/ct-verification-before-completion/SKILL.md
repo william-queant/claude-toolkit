@@ -1,6 +1,6 @@
 ---
 name: ct-verification-before-completion
-description: Evidence-based completion claims -- never say "done" without proof that the work is correct.
+description: Evidence-based completion claims -- never say "done" without proof that the work is correct. Use when about to claim a task is done, fixed, or passing, or before committing or opening a PR
 ---
 
 # Verification Before Completion
@@ -21,6 +21,7 @@ Before claiming complete, run and show output for each:
 - Empty inputs (empty string, empty array, null, undefined)
 - Boundary values (zero, negative, max, off-by-one)
 - Invalid inputs (wrong types, malformed data, missing fields)
+- Concurrent access (simultaneous requests or operations)
 - Error paths (network failure, permission denied)
 
 Do not assume edge cases work because the happy path works.
