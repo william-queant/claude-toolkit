@@ -1,7 +1,10 @@
 ---
-description: "Generate a PR summary from the current branch"
+description: Generate a PR summary from the current branch
 allowed-tools:
-  - Bash
+  - Bash(git diff:*)
+  - Bash(git log:*)
+  - Bash(git merge-base:*)
+  - Bash(git branch:*)
   - Read
 ---
 
@@ -15,7 +18,7 @@ Generate a structured pull request summary by analyzing the diff and commit hist
 
 2. **Gather the diff.** Run `git diff {base}...HEAD --stat` for an overview and `git diff {base}...HEAD` for full changes.
 
-3. **Gather commit history.** Run `git log {base}...HEAD --oneline --no-merges` to understand the progression of changes.
+3. **Gather commit history.** Run `git log {base}..HEAD --oneline --no-merges` (two-dot: commits on HEAD but not on base) to understand the progression of changes.
 
 4. **Analyze changes** by reading modified files to understand the "why" behind each change. Group related changes together.
 
