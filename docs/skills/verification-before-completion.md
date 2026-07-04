@@ -1,6 +1,6 @@
 # Verification Before Completion
 
-> Evidence-based completion claims -- never say "done" without proof that the work is correct.
+> Evidence-based completion claims -- never say "done" without proof that the work is correct. Use when about to claim a task is done, fixed, or passing, or before committing or opening a PR
 
 **Type:** Core Skill (always included)
 **Source:** [`core/skills/ct-verification-before-completion/SKILL.md`](../core/skills/ct-verification-before-completion/SKILL.md)

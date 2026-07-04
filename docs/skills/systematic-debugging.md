@@ -1,6 +1,6 @@
 # Systematic Debugging
 
-> Four-phase methodology for diagnosing and fixing bugs efficiently without guesswork.
+> Four-phase methodology for diagnosing and fixing bugs efficiently without guesswork. Use when investigating a bug, test failure, or unexpected behavior before proposing a fix
 
 **Type:** Core Skill (always included)
 **Source:** [`core/skills/ct-systematic-debugging/SKILL.md`](../core/skills/ct-systematic-debugging/SKILL.md)
