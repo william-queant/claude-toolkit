@@ -19,8 +19,7 @@
 			"recommended": true,
 			"style": {
 				"noUselessElse": "error",
-				"noNestedTernary": "error",
-				"noMagicNumbers": "warn"
+				"noNestedTernary": "error"
 			},
 			"complexity": {
 				"useArrowFunction": "error"

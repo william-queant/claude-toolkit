@@ -56,6 +56,9 @@ const IGNORE_DIRS = new Set([
 	"test-results",
 ]);
 
+/** Node major version at/above which modern ESNext runtime features are assumed available. */
+const MIN_MODERN_NODE_MAJOR = 20;
+
 function readPackageJson(dir: string): PackageJson | null {
 	const pkgPath = join(dir, "package.json");
 	if (!existsSync(pkgPath)) return null;
@@ -331,7 +334,7 @@ const DETECTORS: StackDetector[] = [
 			if (ts) return { name: "esnext", reason: `found ESNext target in ${ts}` };
 			const mod = ctx.packages.find(({ pkg }) => pkg.type === "module");
 			if (mod) return { name: "esnext", reason: `found "type":"module" in ${pkgLabel(mod.rel)}` };
-			const eng = ctx.packages.find(({ pkg }) => enginesNodeAtLeast(pkg, 20));
+			const eng = ctx.packages.find(({ pkg }) => enginesNodeAtLeast(pkg, MIN_MODERN_NODE_MAJOR));
 			if (eng) return { name: "esnext", reason: `found engines.node >=20 in ${pkgLabel(eng.rel)}` };
 			const mjs = findMjs(ctx);
 			if (mjs) return { name: "esnext", reason: `found ${mjs}` };
