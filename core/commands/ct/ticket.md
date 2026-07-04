@@ -1,7 +1,24 @@
 ---
-description: "Work end-to-end on a ticket or issue"
+description: Work end-to-end on a ticket or issue
+argument-hint: "[issue-number | description]"
 allowed-tools:
-  - Bash
+  - Bash(git status:*)
+  - Bash(git checkout:*)
+  - Bash(git switch:*)
+  - Bash(git branch:*)
+  - Bash(git add:*)
+  - Bash(git commit:*)
+  - Bash(git push:*)
+  - Bash(git diff:*)
+  - Bash(git log:*)
+  - Bash(gh issue view:*)
+  - Bash(gh pr create:*)
+  - Bash(gh pr view:*)
+  - Bash(npm run:*)
+  - Bash(pnpm:*)
+  - Bash(bun run:*)
+  - Bash(bun test:*)
+  - Bash(yarn:*)
   - Read
   - Write
   - Edit
@@ -17,7 +34,7 @@ Work on a ticket or issue end-to-end: understand it, explore the codebase, plan 
 
 ### Phase 1: Understand
 
-1. **Read the ticket.** If a GitHub issue number is provided, fetch it with `gh issue view {number}`. Otherwise, use the description provided by the user.
+1. **Read the ticket.** If `$ARGUMENTS` is a GitHub issue number, fetch it with `gh issue view $ARGUMENTS`. Otherwise, treat `$ARGUMENTS` as the ticket description.
 
 2. **Clarify requirements.** Identify acceptance criteria, edge cases, and constraints. If anything is ambiguous, ask before proceeding.
 
