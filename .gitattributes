@@ -1,0 +1,4 @@
+# Normalize line endings. All text files are stored as LF in the repo and
+# checked out as LF on every platform, so tooling (biome, CI) and Windows
+# checkouts with core.autocrlf never disagree over CRLF vs LF.
+* text=auto eol=lf
