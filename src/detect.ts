@@ -335,7 +335,11 @@ const DETECTORS: StackDetector[] = [
 			const mod = ctx.packages.find(({ pkg }) => pkg.type === "module");
 			if (mod) return { name: "esnext", reason: `found "type":"module" in ${pkgLabel(mod.rel)}` };
 			const eng = ctx.packages.find(({ pkg }) => enginesNodeAtLeast(pkg, MIN_MODERN_NODE_MAJOR));
-			if (eng) return { name: "esnext", reason: `found engines.node >=20 in ${pkgLabel(eng.rel)}` };
+			if (eng)
+				return {
+					name: "esnext",
+					reason: `found engines.node >=${MIN_MODERN_NODE_MAJOR} in ${pkgLabel(eng.rel)}`,
+				};
 			const mjs = findMjs(ctx);
 			if (mjs) return { name: "esnext", reason: `found ${mjs}` };
 			return null;
