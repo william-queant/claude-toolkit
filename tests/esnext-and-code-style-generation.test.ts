@@ -29,3 +29,23 @@ test("enabling the esnext stack installs ct-esnext-idioms", async () => {
 		await rm(dir, { recursive: true, force: true });
 	}
 });
+
+test("ct-code-style ships as a core skill (no stacks needed)", async () => {
+	const dir = await makeProject();
+	try {
+		await generate(dir, { stacks: [], packageManager: "bun" }, { quiet: true, scaffold: false });
+		const skill = await readFile(
+			join(dir, ".claude", "skills", "ct-code-style", "SKILL.md"),
+			"utf8",
+		);
+		expect(skill).toContain("guard clause");
+		const rules = JSON.parse(
+			await readFile(join(dir, ".claude", "hooks", "skill-rules.json"), "utf8"),
+		);
+		expect(rules.skills["ct-code-style"]).toBeDefined();
+		const readme = await readFile(join(dir, ".claude", "skills", "README.md"), "utf8");
+		expect(readme).toContain("ct-code-style");
+	} finally {
+		await rm(dir, { recursive: true, force: true });
+	}
+});

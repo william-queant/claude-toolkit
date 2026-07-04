@@ -42,7 +42,7 @@ async function resolveConfig(config: ClaudeToolkitConfig): Promise<ResolvedConfi
 		"ct-testing-patterns",
 		"ct-typescript-conventions",
 		"ct-verification-before-completion",
-		...(config.excludeSkills ? [] : []),
+		"ct-code-style",
 	].filter((s) => !config.excludeSkills?.includes(s));
 
 	return { config, skills, directoryMappings: allMappings, hooks, stacks };
@@ -375,6 +375,8 @@ async function generateSkillsReadme(claudeDir: string, resolved: ResolvedConfig)
 	content += "| ct-testing-patterns | Test-driven development workflow and patterns |\n";
 	content += "| ct-typescript-conventions | TypeScript strict mode and conventions |\n";
 	content += "| ct-verification-before-completion | Evidence-based completion claims protocol |\n";
+	content +=
+		"| ct-code-style | Code structure & style: guard clauses, lookup tables, no magic values |\n";
 	content += "\n## Stack Skills\n\n";
 	content += "| Skill | Stack | Description |\n";
 	content += "|-------|-------|-------------|\n";

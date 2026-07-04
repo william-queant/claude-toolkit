@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.14.0 (2026-07-04)
+
+- feat: add ct-code-style core skill
+
 ## 0.13.0 (2026-07-04)
 
 - feat: add esnext stack with ct-esnext-idioms skill

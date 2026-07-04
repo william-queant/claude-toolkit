@@ -65,6 +65,29 @@
 				],
 				"contextPatterns": ["before claiming", "make sure", "double check"]
 			}
+		},
+		"ct-code-style": {
+			"description": "Code structure & style — guard clauses, lookup tables, destructuring, no magic values",
+			"priority": 6,
+			"triggers": {
+				"keywords": [
+					"refactor",
+					"clean up",
+					"guard clause",
+					"early return",
+					"destructure",
+					"ternary",
+					"magic number",
+					"magic string",
+					"lookup table",
+					"arrow function"
+				],
+				"contentPatterns": ["else if", "else\\s*\\{", "\\bclass\\b", "this\\.", "\\bfunction\\b"],
+				"intentPatterns": [
+					"(?:refactor|clean up|simplify|tidy).*(?:code|function|logic)",
+					"(?:extract|avoid).*(?:magic|constant|conditional)"
+				]
+			}
 		}
 	}
 }
