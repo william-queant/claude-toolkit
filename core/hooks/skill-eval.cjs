@@ -288,7 +288,7 @@ function skillExists(name, skillsDir) {
  */
 function evaluate(prompt, opts = {}) {
 	const rules = opts.rules !== undefined ? opts.rules : loadRules();
-	if (!rules || !rules.skills) return "";
+	if (!rules?.skills) return "";
 	const skillsDir = opts.skillsDir ?? path.join(__dirname, "..", "skills");
 
 	const {
@@ -306,11 +306,7 @@ function evaluate(prompt, opts = {}) {
 	const matches = [];
 	for (const [name, skill] of Object.entries(skills)) {
 		const match = evaluateSkill(name, skill, cappedPrompt, promptLower, filePaths, rules);
-		if (
-			match &&
-			match.score >= minConfidenceScore &&
-			skillExists(match.name, skillsDir)
-		) {
+		if (match && match.score >= minConfidenceScore && skillExists(match.name, skillsDir)) {
 			matches.push(match);
 		}
 	}
