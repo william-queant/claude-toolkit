@@ -1,7 +1,8 @@
 ---
-name: "Code Reviewer"
-description: "Senior code reviewer with stack-aware analysis"
+name: ct-code-reviewer
+description: Senior code reviewer with stack-aware analysis
 model: opus
+tools: Read, Grep, Glob, Bash
 ---
 
 # Code Reviewer Agent
