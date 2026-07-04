@@ -16,6 +16,7 @@ Skills that are always included regardless of stack configuration.
 | [ct-testing-patterns](skills/testing-patterns.md)                             | Framework-agnostic TDD practices, mocking strategies, and test organization |
 | [ct-typescript-conventions](skills/typescript-conventions.md)                 | Strict TypeScript patterns for type safety and maintainability              |
 | [ct-verification-before-completion](skills/verification-before-completion.md) | Evidence-based completion claims with structured verification checklist     |
+| [ct-code-style](skills/code-style.md)                                         | Code structure & style: guard clauses, lookup tables, no magic values       |
 
 ## Commands
 
@@ -55,3 +56,4 @@ Stack-specific skills activated based on your `claude-toolkit.config.ts` configu
 | [ct-playwright-patterns](stacks/playwright-patterns.md)           | `playwright`      | E2E testing with Page Objects, fixtures, auth, network mocking, CI/CD          |
 | [ct-storybook-patterns](stacks/storybook-patterns.md)             | `storybook`       | Interaction testing, CSF 3, play functions, a11y, visual regression            |
 | [ct-capacitor-ota](stacks/capacitor-ota.md)                       | `capacitor`       | Capacitor 8 native runtime and Capgo OTA live updates, channels, encryption    |
+| [ct-esnext-idioms](stacks/esnext-idioms.md)                       | `esnext`          | Modern ECMAScript runtime idioms: Temporal, iterator helpers, using, structuredClone |
