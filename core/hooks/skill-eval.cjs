@@ -265,6 +265,24 @@ function formatConfidence(score, minScore) {
 	return "LOW";
 }
 
+// Strip characters that could break out of the <user-prompt-submit-hook> block or
+// forge system-reminder content when a rule-derived string is echoed into output (F04).
+function sanitize(value) {
+	return String(value)
+		.replace(/[<>\r\n]/g, " ")
+		.trim();
+}
+
+// Confirm the skill actually ships before ordering Claude to invoke it (F03).
+// baseDir is .claude/skills at runtime (path.join(__dirname, "..", "skills")).
+function skillExists(name, skillsDir) {
+	try {
+		return fs.existsSync(path.join(skillsDir, name, "SKILL.md"));
+	} catch {
+		return false;
+	}
+}
+
 /**
  * Main evaluation function
  */
@@ -288,7 +306,11 @@ function evaluate(prompt, opts = {}) {
 	const matches = [];
 	for (const [name, skill] of Object.entries(skills)) {
 		const match = evaluateSkill(name, skill, cappedPrompt, promptLower, filePaths, rules);
-		if (match && match.score >= minConfidenceScore) {
+		if (
+			match &&
+			match.score >= minConfidenceScore &&
+			skillExists(match.name, skillsDir)
+		) {
 			matches.push(match);
 		}
 	}
@@ -303,13 +325,15 @@ function evaluate(prompt, opts = {}) {
 	});
 
 	const topMatches = matches.slice(0, maxSkillsToShow);
-	const relatedSkills = getRelatedSkills(topMatches, skills);
+	const relatedSkills = getRelatedSkills(topMatches, skills).filter((n) =>
+		skillExists(n, skillsDir),
+	);
 
 	let output = "<user-prompt-submit-hook>\n";
 	output += "SKILL ACTIVATION REQUIRED\n\n";
 
 	if (filePaths.length > 0) {
-		output += `Detected file paths: ${filePaths.join(", ")}\n\n`;
+		output += `Detected file paths: ${filePaths.map(sanitize).join(", ")}\n\n`;
 	}
 
 	output += "Matched skills (ranked by relevance):\n";
@@ -317,14 +341,14 @@ function evaluate(prompt, opts = {}) {
 	for (let i = 0; i < topMatches.length; i++) {
 		const match = topMatches[i];
 		const confidence = formatConfidence(match.score, minConfidenceScore);
-		output += `${i + 1}. ${match.name} (${confidence} confidence)\n`;
+		output += `${i + 1}. ${sanitize(match.name)} (${confidence} confidence)\n`;
 		if (showMatchReasons && match.reasons.length > 0) {
-			output += `   Matched: ${match.reasons.slice(0, 3).join(", ")}\n`;
+			output += `   Matched: ${match.reasons.slice(0, 3).map(sanitize).join(", ")}\n`;
 		}
 	}
 
 	if (relatedSkills.length > 0) {
-		output += `\nRelated skills to consider: ${relatedSkills.join(", ")}\n`;
+		output += `\nRelated skills to consider: ${relatedSkills.map(sanitize).join(", ")}\n`;
 	}
 
 	output += "\nBefore implementing, you MUST:\n";
@@ -332,9 +356,9 @@ function evaluate(prompt, opts = {}) {
 	output += "2. ACTIVATE: Invoke the Skill tool for each YES skill\n";
 	output += "3. IMPLEMENT: Only proceed after skill activation\n";
 	output += "\nExample evaluation:\n";
-	output += `- ${topMatches[0].name}: YES - [your reasoning]\n`;
+	output += `- ${sanitize(topMatches[0].name)}: YES - [your reasoning]\n`;
 	if (topMatches.length > 1) {
-		output += `- ${topMatches[1].name}: NO - [your reasoning]\n`;
+		output += `- ${sanitize(topMatches[1].name)}: NO - [your reasoning]\n`;
 	}
 	output += "\nDO NOT skip this step. Invoke relevant skills NOW.\n";
 	output += "</user-prompt-submit-hook>";
@@ -400,5 +424,7 @@ module.exports = {
 	evaluateSkill,
 	getRelatedSkills,
 	formatConfidence,
+	skillExists,
+	sanitize,
 	evaluate,
 };

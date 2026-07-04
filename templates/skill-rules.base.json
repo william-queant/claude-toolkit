@@ -40,8 +40,7 @@
 					"(?:red.green.refactor|tdd)"
 				],
 				"contentPatterns": ["describe\\(", "it\\(", "expect\\(", "vi\\.mock", "jest\\.mock"]
-			},
-			"excludePatterns": ["e2e", "end-to-end"]
+			}
 		},
 		"ct-typescript-conventions": {
 			"description": "TypeScript strict mode and conventions",
@@ -65,33 +64,6 @@
 					"(?:verify|check|confirm).*(?:works|passes)"
 				],
 				"contextPatterns": ["before claiming", "make sure", "double check"]
-			}
-		},
-		"ct-github-actions": {
-			"description": "GitHub Actions CI/CD workflow patterns",
-			"priority": 6,
-			"triggers": {
-				"keywords": ["github action", "github workflow", "workflow", "ci/cd", "cicd", "pipeline"],
-				"keywordPatterns": ["github.action", "ci/?cd", "\\bworkflow\\b"],
-				"pathPatterns": [".github/workflows/**", ".github/**/*.yml"],
-				"intentPatterns": [
-					"(?:create|add|update).*(?:workflow|action|pipeline)",
-					"(?:ci|cd).*(?:pipeline|workflow)"
-				],
-				"contentPatterns": ["runs-on:", "uses:", "steps:"]
-			}
-		},
-		"ct-code-review": {
-			"description": "Handle code review feedback",
-			"priority": 4,
-			"triggers": {
-				"keywords": ["code review", "pr feedback", "review comment"],
-				"keywordPatterns": ["code.review", "pr.feedback", "review.comment"],
-				"intentPatterns": [
-					"(?:respond|address|handle).*(?:review|feedback|comment)",
-					"(?:reviewer).*(?:said|suggested|asked)"
-				],
-				"contextPatterns": ["from the reviewer", "in the pr", "review feedback"]
 			}
 		}
 	}
