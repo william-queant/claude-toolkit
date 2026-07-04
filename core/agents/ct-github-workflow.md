@@ -64,18 +64,27 @@ perf(search): add database index for full-text queries
 ## PR Creation Workflow
 
 ### 1. Pre-flight Checks
+
+First run the project's own verification commands (substitute this project's actual scripts — these are placeholders, not literal commands):
+- **Tests** — run the project's test command
+- **Types** — run the project's typecheck command
+- **Lint** — run the project's lint command
+
+Then confirm the branch is current with, and conflict-free against, the default branch:
+
 ```bash
-# Verify tests pass
-{project test command}
+# Resolve the default branch (main, master, ...) instead of assuming main
+BASE=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's@^origin/@@')
+BASE=${BASE:-main}
+git fetch origin "$BASE"
 
-# Verify types check
-{project typecheck command}
+# Up-to-date check: a non-zero exit means the base has commits not yet on this
+# branch (i.e. the branch is behind) — this is NOT a conflict signal.
+git merge-base --is-ancestor "origin/$BASE" HEAD
 
-# Verify no lint errors
-{project lint command}
-
-# Check for merge conflicts
-git fetch origin main && git merge-base --is-ancestor origin/main HEAD
+# Real merge-conflict probe (does not touch the working tree): a non-zero exit
+# means merging the base into this branch would produce conflicts.
+git merge-tree --write-tree "origin/$BASE" HEAD >/dev/null
 ```
 
 ### 2. PR Title
