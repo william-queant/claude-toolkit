@@ -10,6 +10,7 @@ export type StackName =
 	| "playwright"
 	| "storybook"
 	| "capacitor"
+	| "esnext"
 	| (string & {});
 
 /** Hook configuration for post-tool-use automation */

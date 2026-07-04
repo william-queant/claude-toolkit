@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.12.0 (2026-07-04)
+
+- feat: detect esnext stack via tsconfig/type-module/engines/.mjs
+
 ## 0.11.0 (2026-07-04)
 
 Remediation of the 2026-07-04 core audit (46 findings): the skill-eval hook is hardened, stack-owned commands are gated behind their stack, and the `ct-` agents, commands, skills, and reference docs are corrected and aligned.

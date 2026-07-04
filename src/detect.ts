@@ -12,6 +12,8 @@ interface PackageJson {
 	dependencies?: Record<string, string>;
 	devDependencies?: Record<string, string>;
 	workspaces?: string[] | { packages?: string[] };
+	type?: string;
+	engines?: { node?: string };
 }
 
 /** A directory to inspect for stack markers, with its project-relative label */
@@ -174,6 +176,57 @@ function findProtoFiles(ctx: DetectContext): string | null {
 	return null;
 }
 
+/** Read a file's text, or null if missing/unreadable (tolerates comments/trailing commas). */
+function readTextFile(path: string): string | null {
+	try {
+		return readFileSync(path, "utf-8");
+	} catch {
+		return null;
+	}
+}
+
+/**
+ * First scan root whose tsconfig.json sets target/module/lib to ESNext or ES2022+.
+ * Uses a lenient text scan because tsconfig files routinely carry comments and
+ * trailing commas that would break JSON.parse.
+ */
+function tsconfigTargetsEsnext(ctx: DetectContext): string | null {
+	const modern = /es(?:next|20(?:2[2-9]|[3-9]\d))/i; // ESNext or ES2022..ES2099
+	const keyValue = /"(?:target|module|lib)"\s*:\s*(?:"([^"]*)"|\[([^\]]*)\])/gi;
+	for (const { rel, dir } of ctx.scanRoots) {
+		const text = readTextFile(join(dir, "tsconfig.json"));
+		if (!text) continue;
+		for (const m of text.matchAll(keyValue)) {
+			if (modern.test(m[1] ?? m[2] ?? "")) return relPath(rel, "tsconfig.json");
+		}
+	}
+	return null;
+}
+
+/** Whether a package.json's engines.node floor is >= `major` (first integer in the range). */
+function enginesNodeAtLeast(pkg: PackageJson, major: number): boolean {
+	const range = pkg.engines?.node;
+	if (!range) return false;
+	const m = range.match(/(\d+)/);
+	return m ? Number(m[1]) >= major : false;
+}
+
+/** First `.mjs` file in a bounded search: each scan root's top level + bin/, src/, scripts/. */
+function findMjs(ctx: DetectContext): string | null {
+	const subs = ["", "bin", "src", "scripts"];
+	for (const { rel, dir } of ctx.scanRoots) {
+		for (const sub of subs) {
+			const searchDir = sub ? join(dir, sub) : dir;
+			if (!existsSync(searchDir)) continue;
+			const glob = new Bun.Glob("*.mjs"); // non-recursive: never descends into node_modules
+			for (const match of glob.scanSync({ cwd: searchDir, onlyFiles: true })) {
+				return relPath(rel, sub ? `${sub}/${match}` : match);
+			}
+		}
+	}
+	return null;
+}
+
 const DETECTORS: StackDetector[] = [
 	{
 		name: "solidjs",
@@ -269,6 +322,20 @@ const DETECTORS: StackDetector[] = [
 			if (core) return { name: "capacitor", reason: `found @capacitor/core in ${pkgLabel(core)}` };
 			const config = findConfig(ctx, "capacitor.config");
 			return config ? { name: "capacitor", reason: `found ${config}` } : null;
+		},
+	},
+	{
+		name: "esnext",
+		detect: (ctx) => {
+			const ts = tsconfigTargetsEsnext(ctx);
+			if (ts) return { name: "esnext", reason: `found ESNext target in ${ts}` };
+			const mod = ctx.packages.find(({ pkg }) => pkg.type === "module");
+			if (mod) return { name: "esnext", reason: `found "type":"module" in ${pkgLabel(mod.rel)}` };
+			const eng = ctx.packages.find(({ pkg }) => enginesNodeAtLeast(pkg, 20));
+			if (eng) return { name: "esnext", reason: `found engines.node >=20 in ${pkgLabel(eng.rel)}` };
+			const mjs = findMjs(ctx);
+			if (mjs) return { name: "esnext", reason: `found ${mjs}` };
+			return null;
 		},
 	},
 ];
