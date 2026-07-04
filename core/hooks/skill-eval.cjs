@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 /**
  * Skill Evaluation Engine v2.0
  *
@@ -361,4 +360,17 @@ function main() {
 	});
 }
 
-main();
+if (require.main === module) {
+	main();
+}
+
+module.exports = {
+	matchesGlob,
+	matchesPattern,
+	extractFilePaths,
+	matchDirectoryMapping,
+	evaluateSkill,
+	getRelatedSkills,
+	formatConfidence,
+	evaluate,
+};

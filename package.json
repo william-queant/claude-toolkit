@@ -25,6 +25,7 @@
 		"typecheck": "tsc --noEmit",
 		"lint": "biome check --write",
 		"lint:check": "biome check",
+		"test": "bun test",
 		"postinstall": "bun bin/postinstall.mjs || node bin/postinstall.mjs || exit 0",
 		"prepare": "npx husky"
 	},
