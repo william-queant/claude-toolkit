@@ -93,18 +93,19 @@ function matchesPattern(text, pattern, flags = "i") {
  * @returns {boolean}
  */
 function matchesGlob(filePath, globPattern) {
+	const normalized = String(filePath).replace(/\\/g, "/");
 	const regexPattern = globPattern
-		.replace(/\./g, "\\.")
-		.replace(/\*\*\//g, "<<<DOUBLESTARSLASH>>>")
-		.replace(/\*\*/g, "<<<DOUBLESTAR>>>")
+		.replace(/[.+^${}()|[\]]/g, "\\$&")
+		.replace(/\*\*\//g, "<<<GLOBSTARSLASH>>>")
+		.replace(/\*\*/g, "<<<GLOBSTAR>>>")
 		.replace(/\*/g, "[^/]*")
-		.replace(/<<<DOUBLESTARSLASH>>>/g, "(.*\\/)?")
-		.replace(/<<<DOUBLESTAR>>>/g, ".*")
-		.replace(/\?/g, ".");
+		.replace(/\?/g, ".")
+		.replace(/<<<GLOBSTARSLASH>>>/g, "(?:.*/)?")
+		.replace(/<<<GLOBSTAR>>>/g, ".*");
 
 	try {
 		const regex = new RegExp(`^${regexPattern}$`, "i");
-		return regex.test(filePath);
+		return regex.test(normalized);
 	} catch {
 		return false;
 	}
