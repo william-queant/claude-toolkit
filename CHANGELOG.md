@@ -2,19 +2,12 @@
 
 ## 0.15.0 (2026-07-04)
 
-- feat: enforce code-style rules in scaffolded biome config
+Two new authoring-convention assets — an opt-in `esnext` stack and an always-on `ct-code-style` core skill — plus Biome enforcement of the mechanically-checkable style rules.
 
-## 0.14.0 (2026-07-04)
-
-- feat: add ct-code-style core skill
-
-## 0.13.0 (2026-07-04)
-
-- feat: add esnext stack with ct-esnext-idioms skill
-
-## 0.12.0 (2026-07-04)
-
-- feat: detect esnext stack via tsconfig/type-module/engines/.mjs
+- feat: add the `esnext` stack (skill `ct-esnext-idioms`) — availability-aware guidance on modern ECMAScript runtime features: `Temporal` over `Date`, `using`/`await using` for deterministic cleanup, lazy iterator helpers, `structuredClone`, `Object.groupBy`/`Map.groupBy`, `Promise.withResolvers`, immutable array ops, and ESM hygiene. Detected on tsconfig `target`/`module`/`lib` = ESNext/ES2022+, package.json `"type":"module"`, `engines.node >= 20`, or a `.mjs` file.
+- feat: add the `ct-code-style` core skill (always included) — universal code-structure conventions: guard clauses over nested `else`, object lookup tables over `if/else if` chains, single-level ternaries, full ES6 destructuring, and arrow-only functions with no `class`/`this`. Carve-outs defer to stack skills: never destructure reactive SolidJS `props`, and use `class`/`this` only where a platform mandates it (e.g. Cloudflare Durable Objects).
+- feat: enforce the mechanically-checkable style rules in the scaffolded Biome config — `noUselessElse`, `noNestedTernary`, and `useArrowFunction`. `noMagicNumbers` is kept as skill guidance only (too noisy to enforce).
+- docs: document both assets in the README, `docs/stacks/esnext-idioms.md`, `docs/skills/code-style.md`, and the docs index; cross-link the SolidJS props rule to `ct-code-style`.
 
 ## 0.11.0 (2026-07-04)
 
