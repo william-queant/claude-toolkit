@@ -2,7 +2,13 @@
 
 ## 0.16.0 (2026-08-08)
 
-- feat(skills): prioritise the TypeScript 7 native compiler in ct-typescript-conventions
+`ct-typescript-conventions` now selects a compiler as well as types: prefer the TypeScript 7 native compiler where a project already ships it, fall back cleanly where it does not, and never upgrade a project unprompted. Availability-aware in the same spirit as `ct-esnext-idioms`.
+
+- feat: prioritise the TypeScript 7 native compiler in `ct-typescript-conventions` — TS7 reached GA on 2026-07-08 as `typescript@7.0.2`, with Microsoft reporting 8x–12x faster full builds. The skill detects the *installed* version (`require('typescript/package.json').version`) rather than the declared semver range, which `overrides`/`resolutions`/catalogs routinely defeat, and names the three detection traps: the binary is `tsc` not `tsgo` (that was the pre-GA `@typescript/native-preview` name), range-sniffing is unreliable, and an API probe gives a false negative because TS7 exposes only `version`/`versionMajorMinor`.
+- feat: document when *not* to switch — TS7.0 ships no stable programmatic API, so `typescript-eslint`, `ts-jest`, `ts-node`, `vue-tsc`, `svelte-check`, `@astrojs/check` and `@angular/compiler-cli` break at install or lint time rather than at `tsc --noEmit`, which means a green type-check proves nothing. The skill prescribes the documented side-by-side alias install instead of a downgrade.
+- feat: add the TS7 `tsconfig.json` deltas — the options TS7 rejects outright (`ignoreDeprecations` no longer silences them), plus the two changed defaults behind most real breakage. Verified empirically against 5.9.3 / 6.0.3 / 7.0.2: both defaults land in 6.0 and carry forward, `types` fails `TS2591` even with `@types/node` installed, `rootDir` only bites when an `outDir` is set, and `types: ["*"]` is `TS2688` on 5.x — so no literal value is safe across majors.
+- feat: skill triggers now fire on typecheck, tsconfig, and compiler work — added the `tsc`, `tsgo`, `tsconfig`, `typecheck` and `compiler` keywords, the `**/tsconfig*.json` path pattern, and intents for running a typecheck or upgrading TypeScript.
+- docs: TSConfig cheat sheet gains a TypeScript 7 delta section; the skill's new remit is reflected in the generated skills index, README, and docs index.
 
 ## 0.15.0 (2026-07-04)
 
