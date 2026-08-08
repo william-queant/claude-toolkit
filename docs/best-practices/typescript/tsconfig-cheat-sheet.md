@@ -127,3 +127,34 @@ When a bundler (Vite, esbuild, etc.) handles transpilation:
   }
 }
 ```
+
+## TypeScript 7 Delta
+
+> Not from the source cheat sheet — added for TypeScript 7 (GA 2026-07-08, `typescript@7.0.2`). See [ct-typescript-conventions](../../skills/typescript-conventions.md#tsconfigjson-under-ts7) for the full compiler-selection guidance.
+
+Everything above is TS7-compatible as written, with **two additions** required when the native compiler is in use:
+
+```jsonc
+{
+  "compilerOptions": {
+    // `types` defaults to [] from 6.0 onward. Without this, ambient
+    // globals (`process`, Bun's APIs) fail TS2591 even when
+    // @types/node IS installed. Name only packages you actually have —
+    // a missing one is TS2688.
+    "types": ["node"],
+
+    // `rootDir` defaults to "./" from 6.0 onward. With sources in src/
+    // AND an outDir set, emit fails TS5011 — and `--noEmit` will not
+    // warn you. Without an outDir it does not fire.
+    "rootDir": "./src"
+  }
+}
+```
+
+Both defaults changed in **6.0**, not 7.0 — verified identical on `typescript@6.0.3` and `7.0.2`. `rootDir` matters only when the project emits to an `outDir`; `types` matters always.
+
+`"types": ["*"]` restores the pre-6.0 catch-all behaviour on 6.x and 7.x, but is `TS2688` on 5.x — so it is not a safe value for a config shared across majors.
+
+TS7 also rejects options this sheet never recommends — `baseUrl`, `outFile`, `downlevelIteration`, `target: "es5"`, `module: "amd" | "umd" | "system"`, and `moduleResolution: "node" | "node10" | "classic"`. `ignoreDeprecations` does not silence them.
+
+The TypeScript website's [tsconfig reference](https://www.typescriptlang.org/tsconfig/) has not been updated for TS7 and still documents removed options.

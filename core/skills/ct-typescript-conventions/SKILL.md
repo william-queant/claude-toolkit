@@ -1,11 +1,69 @@
 ---
 name: ct-typescript-conventions
-description: Strict TypeScript patterns for type safety, readability, and maintainable codebases. Use when writing or reviewing TypeScript, adding or tightening types, or deciding between type and interface
+description: Strict TypeScript patterns and compiler selection -- prefer the TypeScript 7 native compiler when a project ships it. Use when writing or reviewing TypeScript, running a typecheck, adding or tightening types, or deciding between type and interface
 ---
 
 # TypeScript Conventions
 
 Strict mode enabled. Catch errors at compile time, not runtime.
+
+## Compiler -- prefer TypeScript 7 when the project has it
+
+TypeScript 7 (GA 2026-07-08, `typescript@7.0.2`) is the Go-native compiler; Microsoft reports **8x--12x faster full builds**. In a project that already ships it, use it for every type-check and build. Never install or bump it unprompted.
+
+**Detect the installed version, not the declared range:**
+
+```bash
+node -p "require('typescript/package.json').version"   # major >= 7 -> TS7
+```
+
+Resolve from the directory you are editing -- monorepo workspaces can pin different majors. Three traps:
+
+- The TS7 binary is **`tsc`**. `tsgo` was the pre-GA `@typescript/native-preview` name -- never put it in a script.
+- `package.json` ranges lie: `overrides`, `resolutions`, catalogs, and stale lockfiles all win, and `*` / `latest` / `>=5` resolve to 7.x today.
+- Don't probe the API -- on TS7 `require("typescript")` exposes only `version` and `versionMajorMinor`, so a `ts.createProgram` check gives a false negative.
+
+**Using it** -- same flags as 6.x:
+
+```bash
+tsc --noEmit                  # type-check
+tsc -b                        # build mode / project references
+tsc --checkers 1 --noEmit     # CI: pin the worker count
+```
+
+`--checkers` defaults to 4. Pin it in CI -- Microsoft warns that varying it can surface order-dependent results.
+
+**Stay on 6.x when a tool embeds the compiler.** TS7.0 ships no stable programmatic API (7.1 targets a new one), so `typescript-eslint`, `ts-jest`, `ts-node`, `vue-tsc`, `svelte-check`, `@astrojs/check`, and `@angular/compiler-cli` all break -- at install or lint time, *not* at `tsc --noEmit`. A green type-check proves nothing here. Vite, Bun, `tsx`, Vitest, and Biome are unaffected. Run both rather than downgrading:
+
+```json
+{
+  "devDependencies": {
+    "@typescript/native": "npm:typescript@^7.0.2",
+    "typescript": "npm:@typescript/typescript6@^6.0.2"
+  }
+}
+```
+
+Keep `typescript` pointed at the 6.0 package -- blocked tools import it by peer dependency. Where TS7 is absent, the floor is `typescript@6.0.3`, the bridge release; its readiness gate is a clean build with `"stableTypeOrdering": true` and no `ignoreDeprecations`.
+
+**`tsconfig.json` rules TS7 enforces** -- `ignoreDeprecations` no longer silences any of them:
+
+| Now rejected | Fix |
+|---|---|
+| `baseUrl` | project-root-relative `paths` |
+| `outFile`, `downlevelIteration` | remove |
+| `target: "es5"` | `"es2015"` or later |
+| `module: "amd" \| "umd" \| "system" \| "none" \| "systemjs"` | `"esnext"`, `"preserve"`, or `"nodenext"` |
+| `moduleResolution: "node" \| "node10" \| "classic"` | `"bundler"`, `"node16"`, or `"nodenext"` |
+| `esModuleInterop` / `allowSyntheticDefaultImports` / `alwaysStrict` set to `false` | drop the override |
+| `out`, `charset`, `keyofStringsOnly`, `importsNotUsedAsValues`, `preserveValueImports`, `suppressImplicitAnyIndexErrors`, `suppressExcessPropertyErrors`, `noStrictGenericChecks`, `noImplicitUseStrict` | gone -- `TS5023: Unknown compiler option` |
+
+Two changed defaults cause most real-world breakage. Both arrived in 6.0 and carry forward, so they bite on either major -- verified identical on 6.0.3 and 7.0.2:
+
+- **`types` defaults to `[]`** -- `process`, `Bun` and friends disappear (`TS2591`) *even with `@types/node` installed*. Set `"types": ["node"]` / `["bun"]` explicitly, naming only packages that are actually installed (a missing one is `TS2688`). `"types": ["*"]` restores the old catch-all on 6.x/7.x but is itself `TS2688` on 5.x.
+- **`rootDir` defaults to `./`** -- with sources in `src/` and an `outDir`, emit fails `TS5011`. Set `"rootDir": "./src"`. `--noEmit` does *not* surface this, so type-check CI stays green while the build breaks.
+
+`strict` and `stableTypeOrdering` are on by default; `stableTypeOrdering` cannot be turned off.
 
 ## Rules
 

@@ -373,7 +373,8 @@ async function generateSkillsReadme(claudeDir: string, resolved: ResolvedConfig)
 	content +=
 		"| ct-systematic-debugging | Four-phase debugging methodology, root cause analysis |\n";
 	content += "| ct-testing-patterns | Test-driven development workflow and patterns |\n";
-	content += "| ct-typescript-conventions | TypeScript strict mode and conventions |\n";
+	content +=
+		"| ct-typescript-conventions | TypeScript strict mode, conventions, and TS7 compiler selection |\n";
 	content += "| ct-verification-before-completion | Evidence-based completion claims protocol |\n";
 	content +=
 		"| ct-code-style | Code structure & style: guard clauses, lookup tables, no magic values |\n";

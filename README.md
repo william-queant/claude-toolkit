@@ -121,7 +121,7 @@ Stacks in your config that are no longer detected are reported but left unchange
 
 - `ct-systematic-debugging` — Four-phase debugging methodology
 - `ct-testing-patterns` — TDD workflow and patterns
-- `ct-typescript-conventions` — TypeScript strict mode best practices
+- `ct-typescript-conventions` — TypeScript strict mode best practices, and preferring the TS7 native compiler where available
 - `ct-verification-before-completion` — Evidence-based completion claims
 - `ct-code-style` — Code structure & style: guard clauses, lookup tables, no magic values
 

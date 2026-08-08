@@ -43,14 +43,37 @@
 			}
 		},
 		"ct-typescript-conventions": {
-			"description": "TypeScript strict mode and conventions",
+			"description": "TypeScript strict mode, conventions, and TS7 compiler selection",
 			"priority": 5,
 			"triggers": {
-				"keywords": ["typescript", "type", "interface", "generic", "strict mode"],
-				"keywordPatterns": ["\\btype\\b", "\\binterface\\b", "\\bgeneric\\b"],
-				"pathPatterns": ["**/*.d.ts", "**/types/**", "**/types.ts"],
-				"intentPatterns": ["(?:define|create).*(?:type|interface)", "(?:type).*(?:error|issue)"],
-				"contentPatterns": ["interface ", "type ", ": unknown", "as const"]
+				"keywords": [
+					"typescript",
+					"type",
+					"interface",
+					"generic",
+					"strict mode",
+					"tsc",
+					"tsgo",
+					"tsconfig",
+					"typecheck",
+					"compiler"
+				],
+				"keywordPatterns": [
+					"\\btype\\b",
+					"\\binterface\\b",
+					"\\bgeneric\\b",
+					"\\btsc\\b",
+					"\\btsconfig\\b",
+					"\\bts\\s?7\\b"
+				],
+				"pathPatterns": ["**/*.d.ts", "**/types/**", "**/types.ts", "**/tsconfig*.json"],
+				"intentPatterns": [
+					"(?:define|create).*(?:type|interface)",
+					"(?:type).*(?:error|issue)",
+					"(?:run|fix).*type.?check",
+					"(?:upgrade|migrate|update).*typescript"
+				],
+				"contentPatterns": ["interface ", "type ", ": unknown", "as const", "compilerOptions"]
 			},
 			"excludePatterns": ["issue type", "type of bug"]
 		},

@@ -14,7 +14,7 @@ Skills that are always included regardless of stack configuration.
 | -------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
 | [ct-systematic-debugging](skills/systematic-debugging.md)                     | Four-phase methodology for diagnosing and fixing bugs without guesswork     |
 | [ct-testing-patterns](skills/testing-patterns.md)                             | Framework-agnostic TDD practices, mocking strategies, and test organization |
-| [ct-typescript-conventions](skills/typescript-conventions.md)                 | Strict TypeScript patterns for type safety and maintainability              |
+| [ct-typescript-conventions](skills/typescript-conventions.md)                 | Strict TypeScript patterns, plus TS7 native-compiler selection              |
 | [ct-verification-before-completion](skills/verification-before-completion.md) | Evidence-based completion claims with structured verification checklist     |
 | [ct-code-style](skills/code-style.md)                                         | Code structure & style: guard clauses, lookup tables, no magic values       |
 

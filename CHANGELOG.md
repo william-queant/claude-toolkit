@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.0 (2026-08-08)
+
+- feat(skills): prioritise the TypeScript 7 native compiler in ct-typescript-conventions
+
 ## 0.15.0 (2026-07-04)
 
 Two new authoring-convention assets — an opt-in `esnext` stack and an always-on `ct-code-style` core skill — plus Biome enforcement of the mechanically-checkable style rules.
