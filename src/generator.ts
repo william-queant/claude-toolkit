@@ -1,5 +1,6 @@
 import { copyFile as fsCopyFile, readdir, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import { assertValidHookCommands } from "./hook-commands.js";
 import type { ClaudeToolkitConfig, ResolvedConfig, StackPack } from "./types.js";
 import { copyDir, exists, readJson, removePath, writeFileEnsureDir } from "./utils.js";
 
@@ -72,15 +73,18 @@ async function resolveConfig(config: ClaudeToolkitConfig): Promise<ResolvedConfi
 		Object.assign(allMappings, config.directoryMappings);
 	}
 
-	// Resolve hooks with package manager defaults
+	// Resolve hooks with package manager defaults (an empty installCommand means "use the default")
 	const installCmd =
-		config.hooks?.installCommand ??
+		config.hooks?.installCommand ||
 		(config.packageManager === "bun" ? "bun install" : `${config.packageManager} install`);
 
 	const hooks = {
 		...config.hooks,
 		installCommand: installCmd,
 	};
+	// Allowlist every hook command, including the derived install command, before
+	// anything is written: an invalid value throws an error naming its field and value.
+	assertValidHookCommands(hooks);
 
 	// Collect skill names
 	const skills = [
