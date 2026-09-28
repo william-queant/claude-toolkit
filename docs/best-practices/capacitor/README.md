@@ -41,7 +41,7 @@ Capacitor wraps a web app (your `webDir` bundle) in a native iOS/Android shell. 
 | `@capacitor/ios`           | ^8.3.x  | iOS 15.0 target, Xcode 26+, SPM default for new projects         |
 | `@capacitor/android`       | ^8.3.x  | minSdk 24, compileSdk/targetSdk 36, Gradle 8.14.3, Kotlin 2.2.20 |
 | `@capgo/capacitor-updater` | ^8.x    | Major tracks Capacitor major; v8 stores channel locally          |
-| `@capgo/cli`               | latest  | `npx @capgo/cli@latest …` — pin in CI                            |
+| `@capgo/cli`               | ^8.x    | `npx @capgo/cli@8 …` — pin the exact version in CI               |
 
 ## Shared Principles
 
@@ -51,7 +51,7 @@ Capacitor wraps a web app (your `webDir` bundle) in a native iOS/Android shell. 
 4. **Sign your bundles.** End-to-end encryption (RSA-2048 + AES-256) means only your users can read an update — keep the private key out of git.
 5. **Keep the cloud in control of production.** Omit `defaultChannel` from production binaries so the dashboard default governs rollout and rollback.
 6. **Monitor before you widen.** Watch the `appReady` / `downloadFailed` ratio; a spike is your signal to roll back.
-7. **Pin tooling.** Unpinned `@capgo/cli@latest` in CI can change upload behavior between runs.
+7. **Pin tooling.** Run the CLI as `@capgo/cli@8`, never `@latest`, and pin the exact version in CI: an unpinned CLI can change upload behavior between runs.
 
 ## Guides
 

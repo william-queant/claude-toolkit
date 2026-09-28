@@ -39,8 +39,10 @@ let results = db.batch(vec![
 ```bash
 wrangler d1 migrations create DB "add_users_table"   # Create migration
 wrangler d1 migrations apply DB --local               # Apply locally
-wrangler d1 migrations apply DB --remote              # Apply to remote
+wrangler d1 migrations apply DB --remote              # Apply to production: explicit confirmation only
 ```
+
+`--remote` changes the production database: the skill runs it only after a successful `--local` run and the user's explicit confirmation.
 
 ### Schema Conventions
 
@@ -141,4 +143,4 @@ const sql = env.HYPERDRIVE.connectionString;
 | **KV as primary data store** | KV is eventually consistent with no query capability. Use D1 for primary data. |
 | **Ignoring batch operations** | Each D1 call is a network round trip. Batch for performance. |
 | **KV cache without TTL** | Stale data without TTL persists indefinitely. |
-| **Not testing migrations locally** | Always apply with `--local` before `--remote`. |
+| **Not testing migrations locally** | Always apply with `--local` before `--remote`, and `--remote` only with explicit confirmation. |

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.19.6 (2026-09-28)
+
+- fix(skills): pin the Capgo CLI, keep API keys out of commands, confirm production actions
+
 ## 0.19.5 (2026-09-28)
 
 - fix(agents): make ct-code-reviewer read-only and confirm before push or PR

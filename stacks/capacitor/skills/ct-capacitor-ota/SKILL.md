@@ -15,16 +15,20 @@ Ship JavaScript, HTML, and CSS changes to installed apps in minutes instead of w
 | -------------------------- | -------- | ----------------------------------------------------------- |
 | `@capacitor/core` & CLI    | ^8.3.x   | 8.3.1 (2026-04-16); Node 22+, SPM default for new iOS apps  |
 | `@capgo/capacitor-updater` | ^8.x     | Major version tracks Capacitor major; v8 stores channels locally |
-| `@capgo/cli`               | latest   | `npx @capgo/cli@latest …` — pin in CI                       |
+| `@capgo/cli`               | ^8.x     | `npx @capgo/cli@8 …` — pin the exact version in CI          |
 
 Capacitor 8 platform floor: Node 22, iOS deployment target 15.0 (Xcode 26+), Android `minSdk 24` / `compileSdk 36` / `targetSdk 36`, Gradle plugin 8.13.0, wrapper 8.14.3, Kotlin 2.2.20.
 
 ## Setup
 
+The user runs `npx @capgo/cli@8 login` themselves, in their own terminal, to store the API key locally (`--local` scopes it to the repo); never put API keys in commands or chat. Later commands read the stored key.
+
 ```bash
 npm i @capgo/capacitor-updater && npx cap sync
-npx @capgo/cli@latest init <API_KEY>   # adds app, injects notifyAppReady, builds, uploads, tests
+npx @capgo/cli@8 init   # uses the stored key: adds app, injects notifyAppReady, builds, uploads, tests
 ```
+
+Run `init` only when the user explicitly asks: it uploads a first bundle.
 
 ## Critical: notifyAppReady()
 
@@ -98,10 +102,12 @@ export default config;
 A channel points to one JS bundle. Devices check their assigned channel; you swap which bundle a channel points to for instant rollout/rollback — no rebuild.
 
 ```bash
-npx @capgo/cli@latest bundle upload --channel=production    # build → upload → assign
-npx @capgo/cli@latest channel set production -s default     # make it the cloud default
-npx @capgo/cli@latest channel set beta --self-assign        # allow in-app setChannel()
+npx @capgo/cli@8 bundle upload --channel=production    # build → upload → assign
+npx @capgo/cli@8 channel set production -s default     # make it the cloud default
+npx @capgo/cli@8 channel set beta --self-assign        # allow in-app setChannel()
 ```
+
+Run `bundle upload` and `channel set production` only when the user explicitly asks: both change what production users receive.
 
 **Channel precedence** (highest first): forced device mapping → cloud per-device override → config `defaultChannel` → cloud Default Channel (the ~99% path).
 
@@ -153,8 +159,8 @@ Key methods: `getLatest()`, `download()`, `next()` (queue), `set()` (apply now �
 Hybrid RSA-2048 + AES-256: a random AES key encrypts each bundle; your **private** RSA key signs the AES key + checksum; the app decrypts with the embedded **public** key. Only your users can read the bundle — not even Capgo.
 
 ```bash
-npx @capgo/cli@latest key create          # generates the key pair
-npx @capgo/cli@latest bundle upload --key-v2 --channel=production
+npx @capgo/cli@8 key create          # generates the key pair
+npx @capgo/cli@8 bundle upload --key-v2 --channel=production
 ```
 
 - `.capgo_key_v2` (private) — **never commit**; store as a CI secret.
@@ -184,7 +190,8 @@ OTA of JS/HTML/CSS is allowed: **Apple** developer agreement §3.3.2 (since iOS 
 4. **Committing `.capgo_key_v2`** — leaks your signing key. Commit only the `.pub`.
 5. **`periodCheckDelay` < 600** — silently clamped; the plugin won't poll faster than 10 minutes.
 6. **100% rollout with no canary** — a bad bundle hits everyone at once. Stage it.
-7. **Unpinned `@capgo/cli@latest` in CI** — a CLI minor can change upload behavior mid-pipeline. Pin the version.
+7. **Unpinned Capgo CLI** — `@latest` can jump a major, and in CI even a minor can change upload behavior mid-pipeline. Use `@capgo/cli@8` and pin the exact version in CI.
+8. **API key in a command** — `login <key>`, `init <key>` or `--apikey=<key>` puts the key in shell history and in Claude's context. The user runs `npx @capgo/cli@8 login` themselves.
 
 ## See Also
 

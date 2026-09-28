@@ -22,8 +22,8 @@ The result: the bundle is confidential (AES) **and** authenticated (RSA signatur
 ## Setup
 
 ```bash
-npx @capgo/cli@latest key create                            # generate the RSA key pair
-npx @capgo/cli@latest bundle upload --key-v2 --channel=production
+npx @capgo/cli@8 key create                            # generate the RSA key pair
+npx @capgo/cli@8 bundle upload --key-v2 --channel=production
 ```
 
 `key create` writes two files and injects the public key into your Capacitor config:
@@ -54,7 +54,7 @@ Encryption doesn't change what you're allowed to ship — it just protects the p
 
 ## Checklist
 
-- [ ] `npx @capgo/cli key create` run; `.capgo_key_v2` added to `.gitignore`.
+- [ ] `npx @capgo/cli@8 key create` run; `.capgo_key_v2` added to `.gitignore`.
 - [ ] Private key stored as a CI secret; `--key-v2` used on every production upload.
 - [ ] `.capgo_key_v2.pub` committed as a backup.
 - [ ] `notifyAppReady()` present so signed-but-broken bundles still self-heal.

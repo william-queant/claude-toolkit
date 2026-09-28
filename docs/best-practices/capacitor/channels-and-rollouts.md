@@ -16,10 +16,10 @@ Mirror your release pipeline with channels, and version bundles with semver pre-
 Promote a build up the ladder by uploading (or re-pointing) it to the next channel — no native rebuild between stages.
 
 ```bash
-npx @capgo/cli@latest bundle upload --channel=staging       # ship to staging
+npx @capgo/cli@8 bundle upload --channel=staging       # ship to staging
 # ...QA signs off...
-npx @capgo/cli@latest bundle upload --channel=production     # promote to production
-npx @capgo/cli@latest channel set production -s default      # ensure it's the cloud default
+npx @capgo/cli@8 bundle upload --channel=production     # promote to production
+npx @capgo/cli@8 channel set production -s default      # ensure it's the cloud default
 ```
 
 ## Channel Precedence
@@ -47,7 +47,7 @@ await CapacitorUpdater.setChannel({ channel: "beta", triggerAutoUpdate: true });
 - In **plugin v8+**, `setChannel` stores the choice **locally on the device** and takes effect on the next update check — no 2-minute backend replication lag. The backend still validates the self-assignment permission at check time.
 
 ```bash
-npx @capgo/cli@latest channel set beta --self-assign        # enable opt-in
+npx @capgo/cli@8 channel set beta --self-assign        # enable opt-in
 ```
 
 ## Version Gates: Enforce the Native/Web Contract
@@ -56,7 +56,7 @@ Channels can refuse updates that cross a version boundary the native shell can't
 
 ```bash
 # Block cross-major OTA on production (e.g. don't push a 2.x bundle to 1.x shells)
-npx @capgo/cli@latest channel set production --disable-auto-update major
+npx @capgo/cli@8 channel set production --disable-auto-update major
 ```
 
 | `--disable-auto-update` | Allows                                              |

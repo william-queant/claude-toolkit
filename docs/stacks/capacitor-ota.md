@@ -19,14 +19,18 @@ Capacitor wraps a web app in a native iOS/Android shell. Capgo's `@capgo/capacit
 | -------------------------- | ------- | ---------------------------------------------------------------- |
 | `@capacitor/core` & CLI    | ^8.3.x  | 8.3.1 (2026-04-16); Node 22+, SPM default for new iOS apps       |
 | `@capgo/capacitor-updater` | ^8.x    | Major version tracks Capacitor major; v8 stores channels locally |
-| `@capgo/cli`               | latest  | `npx @capgo/cli@latest …` — pin in CI                            |
+| `@capgo/cli`               | ^8.x    | `npx @capgo/cli@8 …` — pin the exact version in CI               |
 
 ## Setup
 
+The user runs `npx @capgo/cli@8 login` themselves to store the API key locally; never put API keys in commands or chat.
+
 ```bash
 npm i @capgo/capacitor-updater && npx cap sync
-npx @capgo/cli@latest init <API_KEY>   # adds app, injects notifyAppReady, builds, uploads, tests
+npx @capgo/cli@8 init   # uses the stored key: adds app, injects notifyAppReady, builds, uploads, tests
 ```
+
+Run `init` only when the user explicitly asks: it uploads a first bundle.
 
 ## Critical: notifyAppReady()
 
@@ -81,10 +85,12 @@ export default config;
 A channel points to one JS bundle. Swap which bundle a channel points to for instant rollout/rollback without rebuilding.
 
 ```bash
-npx @capgo/cli@latest bundle upload --channel=production    # build → upload → assign
-npx @capgo/cli@latest channel set production -s default     # make it the cloud default
-npx @capgo/cli@latest channel set beta --self-assign        # allow in-app setChannel()
+npx @capgo/cli@8 bundle upload --channel=production    # build → upload → assign
+npx @capgo/cli@8 channel set production -s default     # make it the cloud default
+npx @capgo/cli@8 channel set beta --self-assign        # allow in-app setChannel()
 ```
+
+The skill runs `bundle upload` and `channel set production` only when the user explicitly asks.
 
 **Precedence** (highest first): forced device mapping → cloud per-device override → config `defaultChannel` → cloud Default Channel.
 
@@ -107,8 +113,8 @@ await CapacitorUpdater.setChannel({ channel: "beta", triggerAutoUpdate: true });
 Hybrid RSA-2048 + AES-256: a random AES key encrypts each bundle; your private RSA key signs the key + checksum; the app decrypts with the embedded public key.
 
 ```bash
-npx @capgo/cli@latest key create
-npx @capgo/cli@latest bundle upload --key-v2 --channel=production
+npx @capgo/cli@8 key create
+npx @capgo/cli@8 bundle upload --key-v2 --channel=production
 ```
 
 - `.capgo_key_v2` (private) — **never commit**; store as a CI secret.
@@ -136,7 +142,8 @@ OTA of JS/HTML/CSS is permitted — Apple §3.3.2 (since iOS 4.3) and Google Pla
 | **Committing `.capgo_key_v2`**            | Leaks your signing key. Commit only the `.pub`.                          |
 | **`periodCheckDelay` < 600**              | Silently clamped; never polls faster than 10 min.                        |
 | **100% rollout with no canary**           | A bad bundle hits everyone at once. Stage it.                            |
-| **Unpinned `@capgo/cli@latest` in CI**    | A CLI minor can change upload behavior mid-pipeline. Pin it.             |
+| **Unpinned Capgo CLI**                    | `@latest` can jump a major; use `@capgo/cli@8`, exact version in CI.     |
+| **API key in a command**                  | Lands in shell history and chat. The user runs `login` themselves.       |
 
 ## See Also
 
