@@ -55,6 +55,17 @@ test("markdown may mention process.env; retrieval( is not eval(", () => {
 	).toEqual([]);
 });
 
+test("a bin path with a leading ./ fails (npm >= 11.10 drops it at publish)", () => {
+	expect(
+		findPackProblems(input({ manifest: { bin: { "claude-toolkit": "./bin/cli.ts" } } })),
+	).toEqual([
+		"package.json bin[claude-toolkit] starts with ./ (npm >= 11.10 removes it at publish): ./bin/cli.ts",
+	]);
+	expect(
+		findPackProblems(input({ manifest: { bin: { "claude-toolkit": "bin/cli.ts" } } })),
+	).toEqual([]);
+});
+
 test("a packed docs/ path fails", () => {
 	expect(findPackProblems(input({ paths: ["docs/audit/notes.md"] }))).toEqual([
 		"docs/ file is packed: docs/audit/notes.md",

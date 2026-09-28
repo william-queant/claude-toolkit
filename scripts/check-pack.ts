@@ -14,7 +14,7 @@ import { join } from "node:path";
 
 export interface PackInput {
 	/** The package.json npm packs. */
-	manifest: { scripts?: Record<string, string> };
+	manifest: { scripts?: Record<string, string>; bin?: Record<string, string> };
 	/** Packed paths, relative to the package root, "/"-separated. */
 	paths: string[];
 	/** Reads a packed file's text. */
@@ -45,6 +45,15 @@ export function findPackProblems(input: PackInput): string[] {
 	}
 	if (publish && scripts.prepare !== undefined) {
 		problems.push("package.json still has a prepare script (run: npm pkg delete scripts.prepare)");
+	}
+	// npm >= 11.10 treats a bin path starting with "./" as invalid and drops the entry at
+	// publish time (npm pack keeps it), which would ship a package without its CLI.
+	for (const [name, target] of Object.entries(manifest.bin ?? {})) {
+		if (target.startsWith("./")) {
+			problems.push(
+				`package.json bin[${name}] starts with ./ (npm >= 11.10 removes it at publish): ${target}`,
+			);
+		}
 	}
 	for (const path of paths) {
 		if (path.startsWith("docs/")) problems.push(`docs/ file is packed: ${path}`);
