@@ -1,4 +1,4 @@
-import { copyFile as fsCopyFile, readdir } from "node:fs/promises";
+import { copyFile as fsCopyFile, readdir, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import type { ClaudeToolkitConfig, ResolvedConfig, StackPack } from "./types.js";
 import { copyDir, exists, readJson, removePath, writeFileEnsureDir } from "./utils.js";
@@ -30,6 +30,22 @@ function buildBranchGuard(branches: string[]): string | null {
 	if (branches.length === 0) return null;
 	const patterns = branches.map((b) => `'${b}'`).join("|");
 	return `# Prevent editing on protected branches\ncase "$(git branch --show-current)" in ${patterns}) echo '{"block": true, "message": "Cannot edit files on a protected branch. Create a feature branch first."}' >&2; exit 2;; esac`;
+}
+
+/** File in .claude/ recording the toolkit version that last generated it. */
+const MARKER_FILE = ".toolkit-version";
+
+/** The installed toolkit version, read from the toolkit's own package.json. */
+export async function readToolkitVersion(): Promise<string> {
+	const { version } = await readJson<{ version: string }>(join(TOOLKIT_ROOT, "package.json"));
+	return version;
+}
+
+/** The version recorded in `<projectDir>/.claude/.toolkit-version`, or null when absent. */
+export async function readMarker(projectDir: string): Promise<string | null> {
+	const markerPath = join(projectDir, ".claude", MARKER_FILE);
+	if (!exists(markerPath)) return null;
+	return (await readFile(markerPath, "utf-8")).trim();
 }
 
 /** Resolve the full configuration by merging core + stacks + project config */
@@ -192,9 +208,9 @@ export async function generate(
 	// 10. Generate skills README
 	await generateSkillsReadme(claudeDir, resolved);
 
-	// Record the toolkit version that produced this output — drives auto-regen on update.
-	const { version } = await readJson<{ version: string }>(join(TOOLKIT_ROOT, "package.json"));
-	await writeFileEnsureDir(join(claudeDir, ".toolkit-version"), `${version}\n`);
+	// Record the toolkit version that produced this output — `refresh` compares against it.
+	const version = await readToolkitVersion();
+	await writeFileEnsureDir(join(claudeDir, MARKER_FILE), `${version}\n`);
 
 	if (!options.quiet) {
 		console.log(

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.17.0 (2026-09-28)
+
+- feat(cli): add claude-toolkit refresh for consumer-owned regeneration
+
 ## 0.16.1 (2026-09-28)
 
 - fix(settings): protected-branch guard blocked every edit with two or more branches

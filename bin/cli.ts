@@ -6,6 +6,7 @@
  * One idempotent command does it all:
  *   bunx claude-toolkit            Create the config if missing, then (re)generate .claude/
  *   bunx claude-toolkit --update   Also pull newly-detected stacks into the config
+ *   bunx claude-toolkit refresh    Regenerate .claude/ only if the toolkit version changed
  *
  * Aliases / back-compat:
  *   init     Friendly name for the first run (same as the bare command)
@@ -18,12 +19,19 @@
 
 import { existsSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { detectStacks } from "../src/detect.js";
-import { generate } from "../src/generator.js";
+import { generate, readMarker, readToolkitVersion } from "../src/generator.js";
 import type { ClaudeToolkitConfig } from "../src/types.js";
 
 const CONFIG_FILENAME = "claude-toolkit.config.ts";
+/** Config files `loadConfig` and `refresh` accept, in lookup order. */
+const CONFIG_FILENAMES = [CONFIG_FILENAME, "claude-toolkit.config.js"];
+
+/** Path of the project's config file, or null when there is none. */
+function findConfigPath(projectDir: string): string | null {
+	return CONFIG_FILENAMES.map((name) => join(projectDir, name)).find((p) => existsSync(p)) ?? null;
+}
 
 /** Build a `stacks: [...]` literal for injection into the config file. */
 function buildStacksLiteral(stacks: string[]): string {
@@ -44,16 +52,16 @@ async function updateConfigStacks(configPath: string, stacks: string[]): Promise
 }
 
 async function loadConfig(projectDir: string): Promise<ClaudeToolkitConfig> {
-	const configPath = join(projectDir, CONFIG_FILENAME);
-	if (!existsSync(configPath)) {
-		throw new Error(`Config not found: ${configPath}\nRun "bunx claude-toolkit" first.`);
+	const configPath = findConfigPath(projectDir);
+	if (configPath === null) {
+		throw new Error(`Config not found in ${projectDir}\nRun "bunx claude-toolkit" first.`);
 	}
 	let mod: { default?: ClaudeToolkitConfig };
 	try {
 		mod = await import(configPath);
 	} catch (err) {
 		throw new Error(
-			`Failed to load ${CONFIG_FILENAME}. Make sure claude-toolkit is installed in this project ` +
+			`Failed to load ${basename(configPath)}. Make sure claude-toolkit is installed in this project ` +
 				`(e.g. "bun add -d claude-toolkit"), then run "bunx claude-toolkit" again.\n  ${(err as Error).message}`,
 		);
 	}
@@ -104,11 +112,12 @@ interface RunOptions {
 async function run(projectDir: string, options: RunOptions = {}): Promise<void> {
 	const { update = false, quiet = false } = options;
 	const log = quiet ? (_msg = "") => {} : (msg = "") => console.log(msg);
-	const configPath = join(projectDir, CONFIG_FILENAME);
+	const existingConfig = findConfigPath(projectDir);
+	const configPath = existingConfig ?? join(projectDir, CONFIG_FILENAME);
 
 	let config: ClaudeToolkitConfig;
 
-	if (!existsSync(configPath)) {
+	if (existingConfig === null) {
 		// First run: create the config from what we detect.
 		const detected = detectStacks(projectDir);
 		if (detected.length > 0) {
@@ -177,6 +186,25 @@ async function run(projectDir: string, options: RunOptions = {}): Promise<void> 
 	log("Done.");
 }
 
+/**
+ * refresh: regenerate .claude/ when the installed toolkit version differs from the
+ * one recorded in .claude/.toolkit-version. Built for the consumer's own "prepare"
+ * script: it never creates the config, never scaffolds committed files, and the
+ * up-to-date path returns before the config is imported.
+ */
+async function refresh(projectDir: string, quiet: boolean): Promise<void> {
+	const log = quiet ? (_msg = "") => {} : (msg = "") => console.log(msg);
+	if (findConfigPath(projectDir) === null) {
+		log('[claude-toolkit] No config found — run "bunx claude-toolkit" to set up .claude/.');
+		return;
+	}
+	const version = await readToolkitVersion();
+	if ((await readMarker(projectDir)) === version) return;
+	const config = await loadConfig(projectDir);
+	await generate(projectDir, config, { quiet: true, scaffold: false });
+	log(`[claude-toolkit] Regenerated .claude/ for toolkit ${version}.`);
+}
+
 /** postinstall: quietly regenerate from an existing config. Never creates one. */
 async function postinstall(projectDir: string): Promise<void> {
 	if (!existsSync(join(projectDir, CONFIG_FILENAME))) return;
@@ -192,6 +220,10 @@ claude-toolkit — Reusable Claude Code configuration
 Usage:
   bunx claude-toolkit [project-dir]            Create config if missing, then regenerate .claude/
   bunx claude-toolkit --update [project-dir]   Also add newly-detected stacks to the config
+
+Commands:
+  refresh [project-dir]   Regenerate .claude/ only if the toolkit version changed.
+                          Never creates the config; meant for a "prepare" script.
 
 Commands (aliases):
   init      First-run friendly name (same as the bare command)
@@ -210,7 +242,7 @@ Flags:
 const argv = process.argv.slice(2);
 const flags = new Set(argv.filter((a) => a.startsWith("-")));
 const positional = argv.filter((a) => !a.startsWith("-"));
-const COMMANDS = new Set(["init", "update", "sync", "help", "postinstall"]);
+const COMMANDS = new Set(["init", "update", "sync", "help", "refresh", "postinstall"]);
 const KNOWN_FLAGS = new Set(["--update", "-u", "--quiet", "-q"]);
 
 // Reject unknown flags so a typo'd flag (e.g. --updat) isn't silently ignored.
@@ -247,6 +279,9 @@ try {
 	switch (command) {
 		case "help":
 			console.log(HELP);
+			break;
+		case "refresh":
+			await refresh(projectDir, quiet);
 			break;
 		case "postinstall":
 			await postinstall(projectDir);
