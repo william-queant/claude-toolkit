@@ -26,3 +26,7 @@ test("the CLI rejects the removed postinstall command", () => {
 	expect(r.exitCode).toBe(1);
 	expect(r.stderr.toString()).toContain("Unknown command: postinstall");
 });
+
+test("generator no longer references the pre-0.11 skill-eval wrapper", async () => {
+	expect(await readFile(fromRoot("src/generator.ts"), "utf8")).not.toContain("skill-eval.sh");
+});

@@ -125,10 +125,8 @@ async function removeGenerated(claudeDir: string): Promise<void> {
 		// Toolkit hook files (copied from core/hooks) + the generated skill-rules.json.
 		...hookFiles.map((f) => removePath(join(claudeDir, "hooks", f))),
 		removePath(join(claudeDir, "hooks", "skill-rules.json")),
-		// Stale files from prior installs: skill-eval.js was renamed to .cjs, and the
-		// skill-eval.sh wrapper was dropped in favour of exec-form node registration.
+		// Stale file from prior installs: skill-eval.js was renamed to .cjs.
 		removePath(join(claudeDir, "hooks", "skill-eval.js")),
-		removePath(join(claudeDir, "hooks", "skill-eval.sh")),
 	]);
 }
 
