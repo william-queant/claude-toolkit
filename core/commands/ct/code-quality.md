@@ -17,9 +17,9 @@ allowed-tools:
   - Bash(go vet:*)
   - Bash(golangci-lint:*)
   - Bash(npm run:*)
-  - Bash(pnpm:*)
+  - Bash(pnpm run:*)
   - Bash(bun run:*)
-  - Bash(yarn:*)
+  - Bash(yarn run:*)
   - Read
   - Glob
   - Grep

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.19.4 (2026-09-28)
+
+- fix(commands): narrow package-manager grants, drop git push, treat issue and PR text as data
+
 ## 0.19.3 (2026-09-28)
 
 - fix(skill-eval): print advisory skill suggestions instead of imperative pseudo-tags
