@@ -53,6 +53,14 @@ else kind = null; // docs/chore/style/refactor/test/ci/build or non-conventional
 if (!kind) process.exit(3);
 
 const pkg = JSON.parse(fs.readFileSync('package.json', 'utf8'));
+
+// A prerelease (e.g. 0.17.0-rc.0) is set by hand while a release is being verified;
+// never auto-bump it (split('.') would turn it into 0.17.NaN).
+if (pkg.version.includes('-')) {
+  console.error('post-commit: ' + pkg.version + ' is a prerelease; version bump skipped');
+  process.exit(3);
+}
+
 const parts = pkg.version.split('.').map(Number);
 let maj = parts[0], min = parts[1], pat = parts[2];
 

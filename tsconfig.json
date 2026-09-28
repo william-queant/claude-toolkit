@@ -5,6 +5,6 @@
 		"rootDir": ".",
 		"types": ["bun"]
 	},
-	"include": ["src/**/*.ts", "bin/**/*.ts"],
+	"include": ["src/**/*.ts", "bin/**/*.ts", "scripts/**/*.ts"],
 	"exclude": ["node_modules", "dist"]
 }

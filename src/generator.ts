@@ -1,12 +1,58 @@
-import { copyFile as fsCopyFile, readdir } from "node:fs/promises";
+import { copyFile as fsCopyFile, readdir, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import type { ClaudeToolkitConfig, ResolvedConfig, StackPack } from "./types.js";
 import { copyDir, exists, readJson, removePath, writeFileEnsureDir } from "./utils.js";
 
 const TOOLKIT_ROOT = resolve(import.meta.dirname, "..");
 
+/** Branches protected when the config sets no `git.protectedBranches`. */
+const DEFAULT_PROTECTED_BRANCHES = ["main"];
+/** A protected branch name must match this before it is quoted into the guard's `case` pattern. */
+const BRANCH_NAME_PATTERN = /^[A-Za-z0-9._/][A-Za-z0-9._/-]*$/;
+
+/** Throw a clear error naming the first protected branch that fails BRANCH_NAME_PATTERN. */
+function assertValidBranchNames(branches: string[]): void {
+	const invalid = branches.find((b) => !BRANCH_NAME_PATTERN.test(b));
+	if (invalid === undefined) return;
+	throw new Error(
+		`Invalid branch name in git.protectedBranches: ${JSON.stringify(invalid)}. ` +
+			'Use only letters, digits, ".", "_", "/" and "-", and do not start with "-".',
+	);
+}
+
+/**
+ * The PreToolUse command that blocks edits on a protected branch, or null when no
+ * branch is protected. Names are validated first, then single-quoted into a `case`
+ * pattern, so each name is matched literally and never parsed by the shell.
+ */
+function buildBranchGuard(branches: string[]): string | null {
+	assertValidBranchNames(branches);
+	if (branches.length === 0) return null;
+	const patterns = branches.map((b) => `'${b}'`).join("|");
+	return `# Prevent editing on protected branches\ncase "$(git branch --show-current)" in ${patterns}) echo '{"block": true, "message": "Cannot edit files on a protected branch. Create a feature branch first."}' >&2; exit 2;; esac`;
+}
+
+/** File in .claude/ recording the toolkit version that last generated it. */
+const MARKER_FILE = ".toolkit-version";
+
+/** The installed toolkit version, read from the toolkit's own package.json. */
+export async function readToolkitVersion(): Promise<string> {
+	const { version } = await readJson<{ version: string }>(join(TOOLKIT_ROOT, "package.json"));
+	return version;
+}
+
+/** The version recorded in `<projectDir>/.claude/.toolkit-version`, or null when absent. */
+export async function readMarker(projectDir: string): Promise<string | null> {
+	const markerPath = join(projectDir, ".claude", MARKER_FILE);
+	if (!exists(markerPath)) return null;
+	return (await readFile(markerPath, "utf-8")).trim();
+}
+
 /** Resolve the full configuration by merging core + stacks + project config */
 async function resolveConfig(config: ClaudeToolkitConfig): Promise<ResolvedConfig> {
+	// Fail before anything is written when a branch name is unsafe to quote into a hook.
+	assertValidBranchNames(config.git?.protectedBranches ?? DEFAULT_PROTECTED_BRANCHES);
+
 	const stacks: StackPack[] = [];
 	const allMappings: Record<string, string> = {};
 
@@ -79,10 +125,8 @@ async function removeGenerated(claudeDir: string): Promise<void> {
 		// Toolkit hook files (copied from core/hooks) + the generated skill-rules.json.
 		...hookFiles.map((f) => removePath(join(claudeDir, "hooks", f))),
 		removePath(join(claudeDir, "hooks", "skill-rules.json")),
-		// Stale files from prior installs: skill-eval.js was renamed to .cjs, and the
-		// skill-eval.sh wrapper was dropped in favour of exec-form node registration.
+		// Stale file from prior installs: skill-eval.js was renamed to .cjs.
 		removePath(join(claudeDir, "hooks", "skill-eval.js")),
-		removePath(join(claudeDir, "hooks", "skill-eval.sh")),
 	]);
 }
 
@@ -153,8 +197,8 @@ export async function generate(
 		].join("\n"),
 	);
 
-	// 9. Scaffold base configs into the project root (committed files). Skipped for
-	//    automatic/postinstall regeneration so an install never writes committed files.
+	// 9. Scaffold base configs into the project root (committed files). Skipped by
+	//    `refresh` (scaffold: false), which must never write committed files.
 	if (options.scaffold !== false) {
 		await scaffoldConfigs(projectDir, resolved, options.quiet);
 	}
@@ -162,9 +206,9 @@ export async function generate(
 	// 10. Generate skills README
 	await generateSkillsReadme(claudeDir, resolved);
 
-	// Record the toolkit version that produced this output — drives auto-regen on update.
-	const { version } = await readJson<{ version: string }>(join(TOOLKIT_ROOT, "package.json"));
-	await writeFileEnsureDir(join(claudeDir, ".toolkit-version"), `${version}\n`);
+	// Record the toolkit version that produced this output — `refresh` compares against it.
+	const version = await readToolkitVersion();
+	await writeFileEnsureDir(join(claudeDir, MARKER_FILE), `${version}\n`);
 
 	if (!options.quiet) {
 		console.log(
@@ -230,11 +274,7 @@ async function generateSkillRules(claudeDir: string, resolved: ResolvedConfig): 
 /** Generate settings.json with hooks */
 async function generateSettings(claudeDir: string, resolved: ResolvedConfig): Promise<void> {
 	const { hooks, config } = resolved;
-	const protectedBranches = config.git?.protectedBranches ?? ["main"];
-
-	const branchCheck = protectedBranches
-		.map((b) => `"$(git branch --show-current)" != "${b}"`)
-		.join(" && ");
+	const branchGuard = buildBranchGuard(config.git?.protectedBranches ?? DEFAULT_PROTECTED_BRANCHES);
 
 	const postToolUseHooks: unknown[] = [];
 
@@ -313,18 +353,16 @@ async function generateSettings(claudeDir: string, resolved: ResolvedConfig): Pr
 					],
 				},
 			],
-			PreToolUse: [
-				{
-					matcher: "Edit|MultiEdit|Write",
-					hooks: [
-						{
-							type: "command",
-							command: `# Prevent editing on protected branches\n[ ${branchCheck} ] || { echo '{"block": true, "message": "Cannot edit files on a protected branch. Create a feature branch first."}' >&2; exit 2; }`,
-							timeout: 5,
-						},
-					],
-				},
-			],
+			...(branchGuard === null
+				? {}
+				: {
+						PreToolUse: [
+							{
+								matcher: "Edit|MultiEdit|Write",
+								hooks: [{ type: "command", command: branchGuard, timeout: 5 }],
+							},
+						],
+					}),
 			PostToolUse: postToolUseHooks.map((hook) => ({
 				matcher: "Edit|MultiEdit|Write",
 				hooks: [hook],

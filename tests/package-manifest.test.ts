@@ -1,0 +1,44 @@
+import { expect, test } from "bun:test";
+import { existsSync } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { fileURLToPath } from "node:url";
+
+const fromRoot = (path: string) => fileURLToPath(new URL(`../${path}`, import.meta.url));
+const pkg = JSON.parse(await readFile(fromRoot("package.json"), "utf8"));
+
+test("package.json declares no install-time lifecycle scripts", () => {
+	for (const name of ["preinstall", "install", "postinstall"]) {
+		expect(pkg.scripts?.[name]).toBeUndefined();
+	}
+});
+
+test("the install-time entry point is gone", () => {
+	expect(existsSync(fromRoot("bin/postinstall.mjs"))).toBe(false);
+});
+
+test("the CLI rejects the removed postinstall command", () => {
+	const r = Bun.spawnSync([process.execPath, fromRoot("bin/cli.ts"), "postinstall"], {
+		cwd: tmpdir(),
+		stdout: "pipe",
+		stderr: "pipe",
+	});
+	expect(r.exitCode).toBe(1);
+	expect(r.stderr.toString()).toContain("Unknown command: postinstall");
+});
+
+test("generator no longer references the pre-0.11 skill-eval wrapper", async () => {
+	expect(await readFile(fromRoot("src/generator.ts"), "utf8")).not.toContain("skill-eval.sh");
+});
+
+test("the published file list is exactly the runtime surface (no docs/)", () => {
+	expect(pkg.files).toEqual(["bin/", "src/", "core/", "stacks/", "templates/", "CHANGELOG.md"]);
+});
+
+test("prepare uses the husky 9 binary, never npx", () => {
+	expect(pkg.scripts.prepare).toBe("husky");
+});
+
+test("@types/bun is pinned to a caret range, not latest", () => {
+	expect(pkg.devDependencies["@types/bun"]).toBe("^1.3.11");
+});
