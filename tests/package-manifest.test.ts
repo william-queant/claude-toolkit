@@ -30,3 +30,11 @@ test("the CLI rejects the removed postinstall command", () => {
 test("generator no longer references the pre-0.11 skill-eval wrapper", async () => {
 	expect(await readFile(fromRoot("src/generator.ts"), "utf8")).not.toContain("skill-eval.sh");
 });
+
+test("the published file list is exactly the runtime surface (no docs/)", () => {
+	expect(pkg.files).toEqual(["bin/", "src/", "core/", "stacks/", "templates/", "CHANGELOG.md"]);
+});
+
+test("prepare uses the husky 9 binary, never npx", () => {
+	expect(pkg.scripts.prepare).toBe("husky");
+});

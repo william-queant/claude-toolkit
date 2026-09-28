@@ -158,7 +158,7 @@ CLAUDE.md                 # tracked — project-specific documentation
 
 ## Documentation
 
-Full reference documentation for all skills, commands, and agents is available in the [`docs/`](docs/README.md) directory.
+Full reference documentation for all skills, commands, and agents lives in the [`docs/` directory on GitHub](https://github.com/william-queant/claude-toolkit/blob/main/docs/README.md). It is not included in the npm package.
 
 ## Versioning
 
