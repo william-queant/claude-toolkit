@@ -38,3 +38,7 @@ test("the published file list is exactly the runtime surface (no docs/)", () => 
 test("prepare uses the husky 9 binary, never npx", () => {
 	expect(pkg.scripts.prepare).toBe("husky");
 });
+
+test("@types/bun is pinned to a caret range, not latest", () => {
+	expect(pkg.devDependencies["@types/bun"]).toBe("^1.3.11");
+});
