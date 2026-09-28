@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.18.0 (unreleased)
+## 0.18.0 (2026-09-29)
 
 The edit hooks finally run, and safely. Every config value that reaches a hook command is checked against an allowlist first. The format and test hooks read the edited file from Claude Code's stdin JSON, skip tools that are not installed and files git ignores, and report failures to Claude as context without ever blocking. `.claude/settings.json` is merged instead of overwritten, the skill hook's output is advisory, and the shipped commands, agents and skills lose their broadest pre-approvals.
 
