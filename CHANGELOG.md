@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.1 (2026-09-28)
+
+- fix(hooks): read the edited file from stdin so the PostToolUse hooks run
+
 ## 0.18.0 (2026-09-28)
 
 - fix(hooks)!: allowlist hook commands before they reach the shell

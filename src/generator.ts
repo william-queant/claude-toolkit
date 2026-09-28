@@ -1,6 +1,6 @@
 import { copyFile as fsCopyFile, readdir, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { assertValidHookCommands } from "./hook-commands.js";
+import { assertValidHookCommands, buildPostToolUseHooks } from "./hook-commands.js";
 import type { ClaudeToolkitConfig, ResolvedConfig, StackPack } from "./types.js";
 import { copyDir, exists, readJson, removePath, writeFileEnsureDir } from "./utils.js";
 
@@ -277,65 +277,11 @@ async function generateSkillRules(claudeDir: string, resolved: ResolvedConfig): 
 
 /** Generate settings.json with hooks */
 async function generateSettings(claudeDir: string, resolved: ResolvedConfig): Promise<void> {
-	const { hooks, config } = resolved;
-	const branchGuard = buildBranchGuard(config.git?.protectedBranches ?? DEFAULT_PROTECTED_BRANCHES);
-
-	const postToolUseHooks: unknown[] = [];
-
-	// Auto-format
-	if (hooks.formatter) {
-		const extensions = ["js", "jsx", "ts", "tsx"];
-		// Add stack-specific extensions
-		for (const stack of resolved.stacks) {
-			for (const ext of stack.fileExtensions) {
-				if (!extensions.includes(ext)) extensions.push(ext);
-			}
-		}
-		const extPattern = extensions.join("|");
-
-		postToolUseHooks.push({
-			type: "command",
-			command: `# Auto-format files\nif [[ "$CLAUDE_TOOL_INPUT_FILE_PATH" =~ \\.(${extPattern})$ ]]; then\n  file_path="$CLAUDE_TOOL_INPUT_FILE_PATH"\n  ${hooks.formatter} "$file_path" 2>&1\n  exit_code=$?\n  if [ $exit_code -ne 0 ]; then\n    echo '{"feedback": "Formatting failed. Check file for syntax errors."}' >&2\n    exit 1\n  else\n    echo '{"feedback": "Formatting applied.", "suppressOutput": true}'\n  fi\nfi`,
-			timeout: 30,
-		});
-	}
-
-	// Auto-install
-	const installCmd = hooks.installCommand ?? `${config.packageManager} install`;
-	postToolUseHooks.push({
-		type: "command",
-		command: `# Auto-install dependencies when package.json changes\nif [[ "$CLAUDE_TOOL_INPUT_FILE_PATH" =~ package\\.json$ ]]; then\n  echo '{"feedback": "Installing dependencies..."}' >&2\n  ${installCmd} >/dev/null 2>&1 && echo '{"feedback": "Dependencies installed.", "suppressOutput": true}' || {\n    echo '{"feedback": "Failed to install dependencies."}' >&2\n    exit 1\n  }\nfi`,
-		timeout: 60,
-	});
-
-	// Auto-run tests
-	if (hooks.testRunner) {
-		postToolUseHooks.push({
-			type: "command",
-			command: `# Auto-run tests when test files change\nif [[ "$CLAUDE_TOOL_INPUT_FILE_PATH" =~ \\.test\\.(js|jsx|ts|tsx)$ ]] || [[ "$CLAUDE_TOOL_INPUT_FILE_PATH" =~ \\.spec\\.(js|jsx|ts|tsx)$ ]]; then\n  echo '{"feedback": "Running tests..."}' >&2\n  ${hooks.testRunner} "$CLAUDE_TOOL_INPUT_FILE_PATH" 2>&1 | tail -30\n  exit_code=\${PIPESTATUS[0]}\n  if [ $exit_code -eq 0 ]; then\n    echo '{"feedback": "Tests passed."}'\n  else\n    echo '{"feedback": "Tests failed. See output above."}' >&2\n  fi\nfi`,
-			timeout: 90,
-		});
-	}
-
-	// Type-check
-	if (hooks.typeCheck) {
-		postToolUseHooks.push({
-			type: "command",
-			command: `# Type-check TypeScript files\nif [[ "$CLAUDE_TOOL_INPUT_FILE_PATH" =~ \\.(ts|tsx)$ ]]; then\n  echo '{"feedback": "Checking TypeScript types..."}' >&2\n  output=$(${hooks.typeCheck} 2>&1)\n  exit_code=$?\n  if [ $exit_code -eq 0 ]; then\n    echo '{"feedback": "No TypeScript errors.", "suppressOutput": true}'\n  else\n    errors=$(echo "$output" | grep -A 2 "error TS" | head -30)\n    if [ -n "$errors" ]; then\n      echo '{"feedback": "TypeScript found type errors:"}' >&2\n      echo "$errors" >&2\n    fi\n  fi\n  exit 0\nfi`,
-			timeout: 30,
-		});
-	}
-
-	// Extra checks (e.g., cargo check for Rust)
-	if (hooks.extraChecks) {
-		for (const check of hooks.extraChecks) {
-			postToolUseHooks.push({
-				type: "command",
-				command: `# Extra check: ${check}\nif [[ "$CLAUDE_TOOL_INPUT_FILE_PATH" =~ \\.rs$ ]]; then\n  echo '{"feedback": "Running extra check..."}' >&2\n  output=$(${check} 2>&1)\n  exit_code=$?\n  if [ $exit_code -eq 0 ]; then\n    echo '{"feedback": "Check passed.", "suppressOutput": true}'\n  else\n    echo '{"feedback": "Check failed:"}' >&2\n    echo "$output" | tail -20 >&2\n  fi\n  exit 0\nfi`,
-				timeout: 60,
-			});
-		}
-	}
+	const branchGuard = buildBranchGuard(
+		resolved.config.git?.protectedBranches ?? DEFAULT_PROTECTED_BRANCHES,
+	);
+	// Hook commands were allowlisted in resolveConfig (assertValidHookCommands).
+	const postToolUseHooks = buildPostToolUseHooks(resolved.hooks);
 
 	const settings = {
 		includeCoAuthoredBy: true,
