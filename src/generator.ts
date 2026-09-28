@@ -1,6 +1,12 @@
 import { copyFile as fsCopyFile, readdir, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
-import { assertValidHookCommands, buildPostToolUseHooks } from "./hook-commands.js";
+import {
+	assertValidHookCommands,
+	buildPostToolUseHooks,
+	SKILL_EVAL_COMMAND,
+	TOOLKIT_HOOK_MARKER,
+} from "./hook-commands.js";
+import { mergeSettings } from "./settings-merge.js";
 import type { ClaudeToolkitConfig, ResolvedConfig, StackPack } from "./types.js";
 import { copyDir, exists, readJson, removePath, writeFileEnsureDir } from "./utils.js";
 
@@ -30,7 +36,7 @@ function buildBranchGuard(branches: string[]): string | null {
 	assertValidBranchNames(branches);
 	if (branches.length === 0) return null;
 	const patterns = branches.map((b) => `'${b}'`).join("|");
-	return `# Prevent editing on protected branches\ncase "$(git branch --show-current)" in ${patterns}) echo '{"block": true, "message": "Cannot edit files on a protected branch. Create a feature branch first."}' >&2; exit 2;; esac`;
+	return `${TOOLKIT_HOOK_MARKER}protect-branch\ncase "$(git branch --show-current)" in ${patterns}) echo '{"block": true, "message": "Cannot edit files on a protected branch. Create a feature branch first."}' >&2; exit 2;; esac`;
 }
 
 /** File in .claude/ recording the toolkit version that last generated it. */
@@ -116,7 +122,8 @@ async function removeCtPrefixed(dir: string): Promise<void> {
  * `.claude/skills`, `/agents`, and `/hooks` are shared Claude Code namespaces, so
  * any user-authored files there — and the user files at the .claude root
  * (settings.local.json, user-team-info.json, tasks/) — are preserved.
- * (settings.json and .gitignore are single generated files, overwritten by generate.)
+ * (.gitignore is a single generated file, overwritten by generate. settings.json is
+ * merged by generateSettings: only `# claude-toolkit:` hook entries are replaced.)
  */
 async function removeGenerated(claudeDir: string): Promise<void> {
 	const coreHooks = join(TOOLKIT_ROOT, "core", "hooks");
@@ -275,55 +282,73 @@ async function generateSkillRules(claudeDir: string, resolved: ResolvedConfig): 
 	);
 }
 
-/** Generate settings.json with hooks */
+/** Tools whose edits trigger the PreToolUse and PostToolUse hooks. */
+const EDIT_TOOLS_MATCHER = "Edit|MultiEdit|Write";
+/** Top-level settings.json keys the toolkit sets only when they are missing. */
+const SETTINGS_DEFAULTS = { includeCoAuthoredBy: true };
+/** settings.json `env` entries the toolkit sets only when they are missing. */
+const SETTINGS_ENV_DEFAULTS = {
+	INSIDE_CLAUDE_CODE: "1",
+	BASH_DEFAULT_TIMEOUT_MS: "420000",
+	BASH_MAX_TIMEOUT_MS: "420000",
+};
+/** Windows editors may save settings.json with a leading byte-order mark (U+FEFF). */
+const BYTE_ORDER_MARK = 0xfeff;
+
+/**
+ * The existing settings.json as an object; {} when there is none. A file that is not a
+ * JSON object is copied to settings.json.bak (with a warning) and replaced.
+ */
+async function readExistingSettings(settingsPath: string): Promise<Record<string, unknown>> {
+	if (!exists(settingsPath)) return {};
+	try {
+		const raw = await readFile(settingsPath, "utf-8");
+		const text = raw.charCodeAt(0) === BYTE_ORDER_MARK ? raw.slice(1) : raw;
+		const parsed: unknown = JSON.parse(text);
+		if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+			return parsed as Record<string, unknown>;
+		}
+	} catch {
+		// Not valid JSON: back it up below.
+	}
+	await fsCopyFile(settingsPath, `${settingsPath}.bak`);
+	console.warn(
+		"[claude-toolkit] .claude/settings.json is not a JSON object; saved it as settings.json.bak and wrote a new one.",
+	);
+	return {};
+}
+
+/** Merge the toolkit's hooks and defaults into .claude/settings.json. */
 async function generateSettings(claudeDir: string, resolved: ResolvedConfig): Promise<void> {
 	const branchGuard = buildBranchGuard(
 		resolved.config.git?.protectedBranches ?? DEFAULT_PROTECTED_BRANCHES,
 	);
 	// Hook commands were allowlisted in resolveConfig (assertValidHookCommands).
 	const postToolUseHooks = buildPostToolUseHooks(resolved.hooks);
+	const settingsPath = join(claudeDir, "settings.json");
 
-	const settings = {
-		includeCoAuthoredBy: true,
-		env: {
-			INSIDE_CLAUDE_CODE: "1",
-			BASH_DEFAULT_TIMEOUT_MS: "420000",
-			BASH_MAX_TIMEOUT_MS: "420000",
-		},
+	const settings = mergeSettings(await readExistingSettings(settingsPath), {
+		defaults: SETTINGS_DEFAULTS,
+		env: SETTINGS_ENV_DEFAULTS,
 		hooks: {
-			UserPromptSubmit: [
-				{
-					hooks: [
-						{
-							type: "command",
-							// biome-ignore lint/suspicious/noTemplateCurlyInString: Claude Code substitutes ${CLAUDE_PROJECT_DIR} at hook-run time; this must be a literal placeholder string.
-							command: 'node "${CLAUDE_PROJECT_DIR}/.claude/hooks/skill-eval.cjs"',
-							timeout: 5,
-						},
-					],
-				},
-			],
-			...(branchGuard === null
-				? {}
-				: {
-						PreToolUse: [
+			UserPromptSubmit: [{ hooks: [{ type: "command", command: SKILL_EVAL_COMMAND, timeout: 5 }] }],
+			PreToolUse:
+				branchGuard === null
+					? []
+					: [
 							{
-								matcher: "Edit|MultiEdit|Write",
+								matcher: EDIT_TOOLS_MATCHER,
 								hooks: [{ type: "command", command: branchGuard, timeout: 5 }],
 							},
 						],
-					}),
 			PostToolUse: postToolUseHooks.map((hook) => ({
-				matcher: "Edit|MultiEdit|Write",
+				matcher: EDIT_TOOLS_MATCHER,
 				hooks: [hook],
 			})),
 		},
-	};
+	});
 
-	await writeFileEnsureDir(
-		join(claudeDir, "settings.json"),
-		`${JSON.stringify(settings, null, 2)}\n`,
-	);
+	await writeFileEnsureDir(settingsPath, `${JSON.stringify(settings, null, 2)}\n`);
 }
 
 /** Scaffold base config files (biome.json, tsconfig.json) into the project */

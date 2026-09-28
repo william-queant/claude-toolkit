@@ -80,6 +80,12 @@ export function assertValidHookCommands(hooks: HookConfig): void {
 /** First-line prefix of every toolkit-owned hook command in settings.json. */
 export const TOOLKIT_HOOK_MARKER = "# claude-toolkit:";
 
+/**
+ * UserPromptSubmit: suggest skills that may be relevant (core/hooks/skill-eval.cjs).
+ * The placeholder stays literal: Claude Code substitutes CLAUDE_PROJECT_DIR when the hook runs.
+ */
+export const SKILL_EVAL_COMMAND = `${TOOLKIT_HOOK_MARKER}skill-eval\nnode "\${CLAUDE_PROJECT_DIR}/.claude/hooks/skill-eval.cjs"`;
+
 /** The fs-only helper the PostToolUse hooks call (core/hooks/hook-input.cjs). */
 const HOOK_INPUT = 'node "$CLAUDE_PROJECT_DIR/.claude/hooks/hook-input.cjs"';
 

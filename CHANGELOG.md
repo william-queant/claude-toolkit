@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.19.2 (2026-09-28)
+
+- fix(settings): merge settings.json instead of overwriting it
+
 ## 0.19.1 (2026-09-28)
 
 - fix(config): default the formatter to Biome, matching the scaffolded biome.json
