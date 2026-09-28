@@ -1,16 +1,23 @@
 # Changelog
 
-## 0.18.0 (2026-09-28)
+## 0.17.0 (unreleased)
 
-- feat!: stop running anything at install time
+Nothing runs at install time any more. The `postinstall` script that regenerated `.claude/` is gone; projects opt in with one line in their own `package.json`, and the new `claude-toolkit refresh` does the work. The package also stops shipping `docs/`, and releases move to npm trusted publishing behind a tarball guard.
 
-## 0.17.0 (2026-09-28)
+**BREAKING:** installing or upgrading claude-toolkit no longer regenerates `.claude/`. After upgrading, run `bunx claude-toolkit` once, then add to your `package.json` scripts:
 
-- feat(cli): add claude-toolkit refresh for consumer-owned regeneration
+    "prepare": "claude-toolkit refresh || exit 0"
 
-## 0.16.1 (2026-09-28)
+This line is **required** when `.claude/` is gitignored (the README's recommended setup): without it a fresh clone has no `.claude/` until someone runs `bunx claude-toolkit`. Yarn 2+ never runs `prepare` for your own project — use `"postinstall"` there. npm runs `prepare` only on a plain `npm install` and pnpm skips it on `pnpm add`; after those, run `bunx claude-toolkit refresh`. If you added `claude-toolkit` to Bun's `trustedDependencies` or pnpm's `onlyBuiltDependencies`, remove it.
 
-- fix(settings): protected-branch guard blocked every edit with two or more branches
+- feat!: remove the install-time `postinstall` script (`bin/postinstall.mjs`) and the internal `postinstall` command. The package now ships no install scripts and no `child_process` or `process.env` use.
+- feat: `claude-toolkit refresh [dir]` regenerates `.claude/` only when the installed toolkit version differs from `.claude/.toolkit-version`; the up-to-date path never imports the config. It never creates the config and never scaffolds `biome.json`/`tsconfig.json`; a config that fails to load exits 1. Accepts `claude-toolkit.config.ts` or `claude-toolkit.config.js`.
+- feat: every non-quiet `bunx claude-toolkit` run ends with the `prepare` line until `package.json` has a script running `claude-toolkit refresh` — with a named-script variant when `prepare` is already taken, `postinstall` for Yarn 2+ (`.yarnrc.yml`), the npm and pnpm cases where `prepare` does not run, and a leading line when upgrading from 0.16 or earlier. The CLI never edits `package.json`.
+- fix(settings): the protected-branch guard blocked every edit on every branch when two or more `git.protectedBranches` were configured (`[` does not accept `&&`). It is now a `case` statement; branch names are validated against `^[A-Za-z0-9._/][A-Za-z0-9._/-]*$`, and an invalid name fails generation with an error naming it. An empty list now generates no guard instead of blocking every edit.
+- build: stop shipping `docs/` (about 270 KB); the README links the docs on GitHub. `prepare` runs the husky 9 binary instead of `npx husky`. Dropped the dead pre-0.11 `skill-eval.sh` cleanup.
+- ci: publish with npm trusted publishing (OIDC, automatic provenance, no token secret); prerelease versions go to the `next` dist-tag, and the workflow can be re-run by hand on a tag. Before publishing it runs typecheck, lint and tests, strips `prepare`, and runs `check:pack --publish` (no install scripts, no shell or environment access in shipped code, no `docs/`) and `check:smoke` (installs the packed tarball and runs `refresh`). A new CI workflow runs the checks on every push and pull request.
+- build: the post-commit version hook no longer bumps prerelease versions (it turned `0.17.0-rc.0` into `0.17.NaN`); `@types/bun` is pinned to `^1.3.11`.
+- docs: README documents `refresh`, the `prepare` opt-in per package manager, upgrading from 0.16, and the release-candidate flow; the auto-format, auto-test and type-check hooks are marked not yet functional (fixed in 0.18.0). CLAUDE.md drops the postinstall description and corrects the post-commit and `core/hooks` notes.
 
 ## 0.16.0 (2026-08-08)
 
