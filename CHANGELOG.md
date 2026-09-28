@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.16.1 (2026-09-28)
+
+- fix(settings): protected-branch guard blocked every edit with two or more branches
+
 ## 0.16.0 (2026-08-08)
 
 `ct-typescript-conventions` now selects a compiler as well as types: prefer the TypeScript 7 native compiler where a project already ships it, fall back cleanly where it does not, and never upgrade a project unprompted. Availability-aware in the same spirit as `ct-esnext-idioms`.

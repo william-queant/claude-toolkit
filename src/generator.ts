@@ -5,8 +5,38 @@ import { copyDir, exists, readJson, removePath, writeFileEnsureDir } from "./uti
 
 const TOOLKIT_ROOT = resolve(import.meta.dirname, "..");
 
+/** Branches protected when the config sets no `git.protectedBranches`. */
+const DEFAULT_PROTECTED_BRANCHES = ["main"];
+/** A protected branch name must match this before it is quoted into the guard's `case` pattern. */
+const BRANCH_NAME_PATTERN = /^[A-Za-z0-9._/][A-Za-z0-9._/-]*$/;
+
+/** Throw a clear error naming the first protected branch that fails BRANCH_NAME_PATTERN. */
+function assertValidBranchNames(branches: string[]): void {
+	const invalid = branches.find((b) => !BRANCH_NAME_PATTERN.test(b));
+	if (invalid === undefined) return;
+	throw new Error(
+		`Invalid branch name in git.protectedBranches: ${JSON.stringify(invalid)}. ` +
+			'Use only letters, digits, ".", "_", "/" and "-", and do not start with "-".',
+	);
+}
+
+/**
+ * The PreToolUse command that blocks edits on a protected branch, or null when no
+ * branch is protected. Names are validated first, then single-quoted into a `case`
+ * pattern, so each name is matched literally and never parsed by the shell.
+ */
+function buildBranchGuard(branches: string[]): string | null {
+	assertValidBranchNames(branches);
+	if (branches.length === 0) return null;
+	const patterns = branches.map((b) => `'${b}'`).join("|");
+	return `# Prevent editing on protected branches\ncase "$(git branch --show-current)" in ${patterns}) echo '{"block": true, "message": "Cannot edit files on a protected branch. Create a feature branch first."}' >&2; exit 2;; esac`;
+}
+
 /** Resolve the full configuration by merging core + stacks + project config */
 async function resolveConfig(config: ClaudeToolkitConfig): Promise<ResolvedConfig> {
+	// Fail before anything is written when a branch name is unsafe to quote into a hook.
+	assertValidBranchNames(config.git?.protectedBranches ?? DEFAULT_PROTECTED_BRANCHES);
+
 	const stacks: StackPack[] = [];
 	const allMappings: Record<string, string> = {};
 
@@ -230,11 +260,7 @@ async function generateSkillRules(claudeDir: string, resolved: ResolvedConfig): 
 /** Generate settings.json with hooks */
 async function generateSettings(claudeDir: string, resolved: ResolvedConfig): Promise<void> {
 	const { hooks, config } = resolved;
-	const protectedBranches = config.git?.protectedBranches ?? ["main"];
-
-	const branchCheck = protectedBranches
-		.map((b) => `"$(git branch --show-current)" != "${b}"`)
-		.join(" && ");
+	const branchGuard = buildBranchGuard(config.git?.protectedBranches ?? DEFAULT_PROTECTED_BRANCHES);
 
 	const postToolUseHooks: unknown[] = [];
 
@@ -313,18 +339,16 @@ async function generateSettings(claudeDir: string, resolved: ResolvedConfig): Pr
 					],
 				},
 			],
-			PreToolUse: [
-				{
-					matcher: "Edit|MultiEdit|Write",
-					hooks: [
-						{
-							type: "command",
-							command: `# Prevent editing on protected branches\n[ ${branchCheck} ] || { echo '{"block": true, "message": "Cannot edit files on a protected branch. Create a feature branch first."}' >&2; exit 2; }`,
-							timeout: 5,
-						},
-					],
-				},
-			],
+			...(branchGuard === null
+				? {}
+				: {
+						PreToolUse: [
+							{
+								matcher: "Edit|MultiEdit|Write",
+								hooks: [{ type: "command", command: branchGuard, timeout: 5 }],
+							},
+						],
+					}),
 			PostToolUse: postToolUseHooks.map((hook) => ({
 				matcher: "Edit|MultiEdit|Write",
 				hooks: [hook],
