@@ -4,7 +4,7 @@
 	"description": "Reusable Claude Code configuration toolkit with stack-specific connectors",
 	"type": "module",
 	"bin": {
-		"claude-toolkit": "./bin/cli.ts"
+		"claude-toolkit": "bin/cli.ts"
 	},
 	"exports": {
 		".": {
@@ -44,7 +44,7 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/william-queant/claude-toolkit.git"
+		"url": "git+https://github.com/william-queant/claude-toolkit.git"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.10",

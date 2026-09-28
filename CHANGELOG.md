@@ -18,6 +18,7 @@ This line is **required** when `.claude/` is gitignored (the README's recommende
 - ci: publish with npm trusted publishing (OIDC, automatic provenance, no token secret); prerelease versions go to the `next` dist-tag, and the workflow can be re-run by hand on a tag. Before publishing it runs typecheck, lint and tests, strips `prepare`, and runs `check:pack --publish` (no install scripts, no shell or environment access in shipped code, no `docs/`) and `check:smoke` (installs the packed tarball and runs `refresh`). A new CI workflow runs the checks on every push and pull request.
 - build: the post-commit version hook no longer bumps prerelease versions (it turned `0.17.0-rc.0` into `0.17.NaN`); `@types/bun` is pinned to `^1.3.11`.
 - docs: README documents `refresh`, the `prepare` opt-in per package manager, upgrading from 0.16, and the release-candidate flow; the auto-format, auto-test and type-check hooks are marked not yet functional (fixed in 0.18.0). CLAUDE.md drops the postinstall description and corrects the post-commit and `core/hooks` notes.
+- fix(package): `bin` is now `bin/cli.ts` without a leading `./`. npm 11.10 and later silently drop a `./`-prefixed `bin` entry at publish time (`npm pack` keeps it), which would have shipped 0.17.0 without its CLI; `check:pack` now rejects such paths. `repository.url` uses the `git+https` form npm normalizes to.
 
 ## 0.16.0 (2026-08-08)
 
