@@ -199,8 +199,8 @@ export async function generate(
 		].join("\n"),
 	);
 
-	// 9. Scaffold base configs into the project root (committed files). Skipped for
-	//    automatic/postinstall regeneration so an install never writes committed files.
+	// 9. Scaffold base configs into the project root (committed files). Skipped by
+	//    `refresh` (scaffold: false), which must never write committed files.
 	if (options.scaffold !== false) {
 		await scaffoldConfigs(projectDir, resolved, options.quiet);
 	}

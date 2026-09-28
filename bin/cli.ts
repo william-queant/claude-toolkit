@@ -13,8 +13,9 @@
  *   update   Same as `--update`
  *   sync     Deprecated alias of the bare command
  *
- * .claude/ is also regenerated automatically on install when the installed
- * toolkit version changes (see bin/postinstall.mjs).
+ * Nothing runs at install time. Consumers keep .claude/ in sync by adding
+ * "prepare": "claude-toolkit refresh || exit 0" to their own package.json scripts;
+ * the bare command prints that hint until they do.
  */
 
 import { existsSync } from "node:fs";
@@ -22,6 +23,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 import { detectStacks } from "../src/detect.js";
 import { generate, readMarker, readToolkitVersion } from "../src/generator.js";
+import { buildRefreshHint } from "../src/refresh-hint.js";
 import type { ClaudeToolkitConfig } from "../src/types.js";
 
 const CONFIG_FILENAME = "claude-toolkit.config.ts";
@@ -114,6 +116,8 @@ async function run(projectDir: string, options: RunOptions = {}): Promise<void> 
 	const log = quiet ? (_msg = "") => {} : (msg = "") => console.log(msg);
 	const existingConfig = findConfigPath(projectDir);
 	const configPath = existingConfig ?? join(projectDir, CONFIG_FILENAME);
+	// Read before generate() rewrites it: a pre-0.17 marker means this run is an upgrade.
+	const previousVersion = await readMarker(projectDir);
 
 	let config: ClaudeToolkitConfig;
 
@@ -184,6 +188,33 @@ async function run(projectDir: string, options: RunOptions = {}): Promise<void> 
 
 	await generate(projectDir, config, { quiet });
 	log("Done.");
+	if (!quiet) await printRefreshHint(projectDir, config.packageManager, previousVersion);
+}
+
+/**
+ * Print the "keep .claude/ in sync" hint unless package.json already runs
+ * `claude-toolkit refresh`. Only prints: package.json is a committed file.
+ */
+async function printRefreshHint(
+	projectDir: string,
+	packageManager: ClaudeToolkitConfig["packageManager"],
+	previousVersion: string | null,
+): Promise<void> {
+	const pkgPath = join(projectDir, "package.json");
+	if (!existsSync(pkgPath)) return;
+	let scripts: Record<string, unknown>;
+	try {
+		scripts = JSON.parse(await readFile(pkgPath, "utf-8")).scripts ?? {};
+	} catch {
+		return; // an unparsable package.json is not worth failing the run over
+	}
+	const lines = buildRefreshHint({
+		scripts,
+		packageManager,
+		yarnBerry: existsSync(join(projectDir, ".yarnrc.yml")),
+		previousVersion,
+	});
+	if (lines.length > 0) console.log(`\n${lines.join("\n")}`);
 }
 
 /**
@@ -203,15 +234,6 @@ async function refresh(projectDir: string, quiet: boolean): Promise<void> {
 	const config = await loadConfig(projectDir);
 	await generate(projectDir, config, { quiet: true, scaffold: false });
 	log(`[claude-toolkit] Regenerated .claude/ for toolkit ${version}.`);
-}
-
-/** postinstall: quietly regenerate from an existing config. Never creates one. */
-async function postinstall(projectDir: string): Promise<void> {
-	if (!existsSync(join(projectDir, CONFIG_FILENAME))) return;
-	const config = await loadConfig(projectDir);
-	// scaffold:false — never write committed project files (biome.json/tsconfig.json) on install.
-	await generate(projectDir, config, { quiet: true, scaffold: false });
-	console.log("[claude-toolkit] Regenerated .claude/ for the updated toolkit version.");
 }
 
 const HELP = `
@@ -235,14 +257,16 @@ Flags:
   --update, -u   Add newly-detected stacks to the config before regenerating
   --quiet, -q    Suppress informational output
 
-.claude/ also regenerates automatically on install when the toolkit version changes.
+Nothing runs at install time. To keep .claude/ in sync after upgrades, add to
+your package.json "scripts":
+  "prepare": "claude-toolkit refresh || exit 0"
 `;
 
 // ---- entry ----
 const argv = process.argv.slice(2);
 const flags = new Set(argv.filter((a) => a.startsWith("-")));
 const positional = argv.filter((a) => !a.startsWith("-"));
-const COMMANDS = new Set(["init", "update", "sync", "help", "refresh", "postinstall"]);
+const COMMANDS = new Set(["init", "update", "sync", "help", "refresh"]);
 const KNOWN_FLAGS = new Set(["--update", "-u", "--quiet", "-q"]);
 
 // Reject unknown flags so a typo'd flag (e.g. --updat) isn't silently ignored.
@@ -282,9 +306,6 @@ try {
 			break;
 		case "refresh":
 			await refresh(projectDir, quiet);
-			break;
-		case "postinstall":
-			await postinstall(projectDir);
 			break;
 		case "sync":
 			if (!quiet) {

@@ -1,6 +1,6 @@
 {
 	"name": "claude-toolkit",
-	"version": "0.17.0",
+	"version": "0.18.0",
 	"description": "Reusable Claude Code configuration toolkit with stack-specific connectors",
 	"type": "module",
 	"bin": {
@@ -26,7 +26,6 @@
 		"lint": "biome check --write",
 		"lint:check": "biome check",
 		"test": "bun test",
-		"postinstall": "bun bin/postinstall.mjs || node bin/postinstall.mjs || exit 0",
 		"prepare": "npx husky"
 	},
 	"lint-staged": {

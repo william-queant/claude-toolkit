@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.18.0 (2026-09-28)
+
+- feat!: stop running anything at install time
+
 ## 0.17.0 (2026-09-28)
 
 - feat(cli): add claude-toolkit refresh for consumer-owned regeneration
