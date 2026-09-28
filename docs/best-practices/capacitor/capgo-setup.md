@@ -4,10 +4,14 @@
 
 ## Install
 
+The user runs `npx @capgo/cli@8 login` themselves, in their own terminal, to store the API key locally. Never put API keys in commands or chat.
+
 ```bash
 npm i @capgo/capacitor-updater && npx cap sync
-npx @capgo/cli@latest init <API_KEY>
+npx @capgo/cli@8 init
 ```
+
+Run `init` only when the user explicitly asks: it uploads a first bundle.
 
 `init` is an interactive onboarding: it registers the app in Capgo Cloud, injects the `notifyAppReady()` call, builds, uploads the first bundle, and verifies the update round-trips. Run it once per app.
 
@@ -130,19 +134,19 @@ Subscribe to `downloadFailed` and `appReady` for monitoring; subscribe to `major
 ## CLI Cheat Sheet
 
 ```bash
-npx @capgo/cli@latest login <API_KEY>                       # store key (--local to scope to repo)
-npx @capgo/cli@latest app add com.example.app               # register an app
-npx @capgo/cli@latest bundle upload --channel=production     # build → upload → assign
-npx @capgo/cli@latest bundle upload --key-v2 --channel=production   # encrypted upload
-npx @capgo/cli@latest bundle upload --delta-only            # require delta-capable clients
-npx @capgo/cli@latest bundle compatibility -c production    # check native compatibility first
-npx @capgo/cli@latest channel set production -s default     # set the cloud default channel
-npx @capgo/cli@latest key create                            # generate the E2E key pair
+npx @capgo/cli@8 login                                     # the user runs this: stores the key (--local scopes it to the repo)
+npx @capgo/cli@8 app add com.example.app               # register an app
+npx @capgo/cli@8 bundle upload --channel=production     # build → upload → assign
+npx @capgo/cli@8 bundle upload --key-v2 --channel=production   # encrypted upload
+npx @capgo/cli@8 bundle upload --delta-only            # require delta-capable clients
+npx @capgo/cli@8 bundle compatibility -c production    # check native compatibility first
+npx @capgo/cli@8 channel set production -s default     # set the cloud default channel
+npx @capgo/cli@8 key create                            # generate the E2E key pair
 ```
 
 Useful `bundle upload` flags: `--channel`, `--key-v2` / `--no-key`, `--delta` / `--delta-only`, `--external` (link your own storage), `--tus` (resumable upload), `--encrypted-checksum`.
 
-**Pin the CLI version in CI** (`@capgo/cli@8.x` rather than `@latest`) so upload behavior doesn't change between pipeline runs.
+**Pin the CLI**: these commands use the major (`@capgo/cli@8`); in CI pin the exact version so upload behavior doesn't change between pipeline runs. Run `bundle upload` and `channel set production` only when the user explicitly asks.
 
 ## See Also
 

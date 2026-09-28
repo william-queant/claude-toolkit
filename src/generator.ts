@@ -1,5 +1,12 @@
 import { copyFile as fsCopyFile, readdir, readFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
+import {
+	assertValidHookCommands,
+	buildPostToolUseHooks,
+	SKILL_EVAL_COMMAND,
+	TOOLKIT_HOOK_MARKER,
+} from "./hook-commands.js";
+import { mergeSettings } from "./settings-merge.js";
 import type { ClaudeToolkitConfig, ResolvedConfig, StackPack } from "./types.js";
 import { copyDir, exists, readJson, removePath, writeFileEnsureDir } from "./utils.js";
 
@@ -29,7 +36,7 @@ function buildBranchGuard(branches: string[]): string | null {
 	assertValidBranchNames(branches);
 	if (branches.length === 0) return null;
 	const patterns = branches.map((b) => `'${b}'`).join("|");
-	return `# Prevent editing on protected branches\ncase "$(git branch --show-current)" in ${patterns}) echo '{"block": true, "message": "Cannot edit files on a protected branch. Create a feature branch first."}' >&2; exit 2;; esac`;
+	return `${TOOLKIT_HOOK_MARKER}protect-branch\ncase "$(git branch --show-current)" in ${patterns}) echo '{"block": true, "message": "Cannot edit files on a protected branch. Create a feature branch first."}' >&2; exit 2;; esac`;
 }
 
 /** File in .claude/ recording the toolkit version that last generated it. */
@@ -72,15 +79,18 @@ async function resolveConfig(config: ClaudeToolkitConfig): Promise<ResolvedConfi
 		Object.assign(allMappings, config.directoryMappings);
 	}
 
-	// Resolve hooks with package manager defaults
+	// Resolve hooks with package manager defaults (an empty installCommand means "use the default")
 	const installCmd =
-		config.hooks?.installCommand ??
+		config.hooks?.installCommand ||
 		(config.packageManager === "bun" ? "bun install" : `${config.packageManager} install`);
 
 	const hooks = {
 		...config.hooks,
 		installCommand: installCmd,
 	};
+	// Allowlist every hook command, including the derived install command, before
+	// anything is written: an invalid value throws an error naming its field and value.
+	assertValidHookCommands(hooks);
 
 	// Collect skill names
 	const skills = [
@@ -112,7 +122,8 @@ async function removeCtPrefixed(dir: string): Promise<void> {
  * `.claude/skills`, `/agents`, and `/hooks` are shared Claude Code namespaces, so
  * any user-authored files there — and the user files at the .claude root
  * (settings.local.json, user-team-info.json, tasks/) — are preserved.
- * (settings.json and .gitignore are single generated files, overwritten by generate.)
+ * (.gitignore is a single generated file, overwritten by generate. settings.json is
+ * merged by generateSettings: only `# claude-toolkit:` hook entries are replaced.)
  */
 async function removeGenerated(claudeDir: string): Promise<void> {
 	const coreHooks = join(TOOLKIT_ROOT, "core", "hooks");
@@ -271,109 +282,73 @@ async function generateSkillRules(claudeDir: string, resolved: ResolvedConfig): 
 	);
 }
 
-/** Generate settings.json with hooks */
+/** Tools whose edits trigger the PreToolUse and PostToolUse hooks. */
+const EDIT_TOOLS_MATCHER = "Edit|MultiEdit|Write";
+/** Top-level settings.json keys the toolkit sets only when they are missing. */
+const SETTINGS_DEFAULTS = { includeCoAuthoredBy: true };
+/** settings.json `env` entries the toolkit sets only when they are missing. */
+const SETTINGS_ENV_DEFAULTS = {
+	INSIDE_CLAUDE_CODE: "1",
+	BASH_DEFAULT_TIMEOUT_MS: "420000",
+	BASH_MAX_TIMEOUT_MS: "420000",
+};
+/** Windows editors may save settings.json with a leading byte-order mark (U+FEFF). */
+const BYTE_ORDER_MARK = 0xfeff;
+
+/**
+ * The existing settings.json as an object; {} when there is none. A file that is not a
+ * JSON object is copied to settings.json.bak (with a warning) and replaced.
+ */
+async function readExistingSettings(settingsPath: string): Promise<Record<string, unknown>> {
+	if (!exists(settingsPath)) return {};
+	try {
+		const raw = await readFile(settingsPath, "utf-8");
+		const text = raw.charCodeAt(0) === BYTE_ORDER_MARK ? raw.slice(1) : raw;
+		const parsed: unknown = JSON.parse(text);
+		if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+			return parsed as Record<string, unknown>;
+		}
+	} catch {
+		// Not valid JSON: back it up below.
+	}
+	await fsCopyFile(settingsPath, `${settingsPath}.bak`);
+	console.warn(
+		"[claude-toolkit] .claude/settings.json is not a JSON object; saved it as settings.json.bak and wrote a new one.",
+	);
+	return {};
+}
+
+/** Merge the toolkit's hooks and defaults into .claude/settings.json. */
 async function generateSettings(claudeDir: string, resolved: ResolvedConfig): Promise<void> {
-	const { hooks, config } = resolved;
-	const branchGuard = buildBranchGuard(config.git?.protectedBranches ?? DEFAULT_PROTECTED_BRANCHES);
+	const branchGuard = buildBranchGuard(
+		resolved.config.git?.protectedBranches ?? DEFAULT_PROTECTED_BRANCHES,
+	);
+	// Hook commands were allowlisted in resolveConfig (assertValidHookCommands).
+	const postToolUseHooks = buildPostToolUseHooks(resolved.hooks);
+	const settingsPath = join(claudeDir, "settings.json");
 
-	const postToolUseHooks: unknown[] = [];
-
-	// Auto-format
-	if (hooks.formatter) {
-		const extensions = ["js", "jsx", "ts", "tsx"];
-		// Add stack-specific extensions
-		for (const stack of resolved.stacks) {
-			for (const ext of stack.fileExtensions) {
-				if (!extensions.includes(ext)) extensions.push(ext);
-			}
-		}
-		const extPattern = extensions.join("|");
-
-		postToolUseHooks.push({
-			type: "command",
-			command: `# Auto-format files\nif [[ "$CLAUDE_TOOL_INPUT_FILE_PATH" =~ \\.(${extPattern})$ ]]; then\n  file_path="$CLAUDE_TOOL_INPUT_FILE_PATH"\n  ${hooks.formatter} "$file_path" 2>&1\n  exit_code=$?\n  if [ $exit_code -ne 0 ]; then\n    echo '{"feedback": "Formatting failed. Check file for syntax errors."}' >&2\n    exit 1\n  else\n    echo '{"feedback": "Formatting applied.", "suppressOutput": true}'\n  fi\nfi`,
-			timeout: 30,
-		});
-	}
-
-	// Auto-install
-	const installCmd = hooks.installCommand ?? `${config.packageManager} install`;
-	postToolUseHooks.push({
-		type: "command",
-		command: `# Auto-install dependencies when package.json changes\nif [[ "$CLAUDE_TOOL_INPUT_FILE_PATH" =~ package\\.json$ ]]; then\n  echo '{"feedback": "Installing dependencies..."}' >&2\n  ${installCmd} >/dev/null 2>&1 && echo '{"feedback": "Dependencies installed.", "suppressOutput": true}' || {\n    echo '{"feedback": "Failed to install dependencies."}' >&2\n    exit 1\n  }\nfi`,
-		timeout: 60,
-	});
-
-	// Auto-run tests
-	if (hooks.testRunner) {
-		postToolUseHooks.push({
-			type: "command",
-			command: `# Auto-run tests when test files change\nif [[ "$CLAUDE_TOOL_INPUT_FILE_PATH" =~ \\.test\\.(js|jsx|ts|tsx)$ ]] || [[ "$CLAUDE_TOOL_INPUT_FILE_PATH" =~ \\.spec\\.(js|jsx|ts|tsx)$ ]]; then\n  echo '{"feedback": "Running tests..."}' >&2\n  ${hooks.testRunner} "$CLAUDE_TOOL_INPUT_FILE_PATH" 2>&1 | tail -30\n  exit_code=\${PIPESTATUS[0]}\n  if [ $exit_code -eq 0 ]; then\n    echo '{"feedback": "Tests passed."}'\n  else\n    echo '{"feedback": "Tests failed. See output above."}' >&2\n  fi\nfi`,
-			timeout: 90,
-		});
-	}
-
-	// Type-check
-	if (hooks.typeCheck) {
-		postToolUseHooks.push({
-			type: "command",
-			command: `# Type-check TypeScript files\nif [[ "$CLAUDE_TOOL_INPUT_FILE_PATH" =~ \\.(ts|tsx)$ ]]; then\n  echo '{"feedback": "Checking TypeScript types..."}' >&2\n  output=$(${hooks.typeCheck} 2>&1)\n  exit_code=$?\n  if [ $exit_code -eq 0 ]; then\n    echo '{"feedback": "No TypeScript errors.", "suppressOutput": true}'\n  else\n    errors=$(echo "$output" | grep -A 2 "error TS" | head -30)\n    if [ -n "$errors" ]; then\n      echo '{"feedback": "TypeScript found type errors:"}' >&2\n      echo "$errors" >&2\n    fi\n  fi\n  exit 0\nfi`,
-			timeout: 30,
-		});
-	}
-
-	// Extra checks (e.g., cargo check for Rust)
-	if (hooks.extraChecks) {
-		for (const check of hooks.extraChecks) {
-			postToolUseHooks.push({
-				type: "command",
-				command: `# Extra check: ${check}\nif [[ "$CLAUDE_TOOL_INPUT_FILE_PATH" =~ \\.rs$ ]]; then\n  echo '{"feedback": "Running extra check..."}' >&2\n  output=$(${check} 2>&1)\n  exit_code=$?\n  if [ $exit_code -eq 0 ]; then\n    echo '{"feedback": "Check passed.", "suppressOutput": true}'\n  else\n    echo '{"feedback": "Check failed:"}' >&2\n    echo "$output" | tail -20 >&2\n  fi\n  exit 0\nfi`,
-				timeout: 60,
-			});
-		}
-	}
-
-	const settings = {
-		includeCoAuthoredBy: true,
-		env: {
-			INSIDE_CLAUDE_CODE: "1",
-			BASH_DEFAULT_TIMEOUT_MS: "420000",
-			BASH_MAX_TIMEOUT_MS: "420000",
-		},
+	const settings = mergeSettings(await readExistingSettings(settingsPath), {
+		defaults: SETTINGS_DEFAULTS,
+		env: SETTINGS_ENV_DEFAULTS,
 		hooks: {
-			UserPromptSubmit: [
-				{
-					hooks: [
-						{
-							type: "command",
-							// biome-ignore lint/suspicious/noTemplateCurlyInString: Claude Code substitutes ${CLAUDE_PROJECT_DIR} at hook-run time; this must be a literal placeholder string.
-							command: 'node "${CLAUDE_PROJECT_DIR}/.claude/hooks/skill-eval.cjs"',
-							timeout: 5,
-						},
-					],
-				},
-			],
-			...(branchGuard === null
-				? {}
-				: {
-						PreToolUse: [
+			UserPromptSubmit: [{ hooks: [{ type: "command", command: SKILL_EVAL_COMMAND, timeout: 5 }] }],
+			PreToolUse:
+				branchGuard === null
+					? []
+					: [
 							{
-								matcher: "Edit|MultiEdit|Write",
+								matcher: EDIT_TOOLS_MATCHER,
 								hooks: [{ type: "command", command: branchGuard, timeout: 5 }],
 							},
 						],
-					}),
 			PostToolUse: postToolUseHooks.map((hook) => ({
-				matcher: "Edit|MultiEdit|Write",
+				matcher: EDIT_TOOLS_MATCHER,
 				hooks: [hook],
 			})),
 		},
-	};
+	});
 
-	await writeFileEnsureDir(
-		join(claudeDir, "settings.json"),
-		`${JSON.stringify(settings, null, 2)}\n`,
-	);
+	await writeFileEnsureDir(settingsPath, `${JSON.stringify(settings, null, 2)}\n`);
 }
 
 /** Scaffold base config files (biome.json, tsconfig.json) into the project */

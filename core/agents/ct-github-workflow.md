@@ -119,6 +119,7 @@ Keep under 70 characters. The title should tell a reviewer what this PR does wit
 - [ ] PR title follows conventional format
 - [ ] Description explains the "why"
 - [ ] Changes are focused (one concern per PR)
+- [ ] The user confirmed the push and the PR
 
 ## Workflow Commands
 
@@ -134,7 +135,7 @@ git checkout "$BASE" && git pull && git checkout -b feat/description
 git add {files}
 git commit -m "feat(scope): description"
 
-# Push and create PR
+# Push and create PR — only after the user confirms
 git push -u origin HEAD
 gh pr create --title "feat(scope): description" --body "..."
 
@@ -144,6 +145,7 @@ git fetch origin "$BASE" && git rebase "origin/$BASE"
 
 ## Principles
 
+- **Confirm first.** Confirm with the user before `git push` or `gh pr create`; never force-push shared branches.
 - **Small PRs are better.** If a PR touches more than 10 files or 300 lines, consider splitting it.
 - **One concern per PR.** Do not mix a feature with a refactor with a dependency upgrade.
 - **Commit history matters.** Each commit should be a logical, buildable unit. Squash fixup commits before opening the PR.

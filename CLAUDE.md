@@ -32,7 +32,7 @@ bunx claude-toolkit refresh      # Regenerate only if the toolkit version change
 
 1. **Detection** (`src/detect.ts`): Scans `package.json` dependencies, workspace structure, and config files (vite.config.ts, wrangler.toml, etc.) to identify which stacks are in use
 2. **Configuration** (`src/types.ts`): User creates `claude-toolkit.config.ts` (scaffolded on first run with detected stacks pre-filled) that specifies stacks, package manager, hooks, and git config
-3. **Generation** (`src/generator.ts`): Merges core skills + stack-specific skills, resolves hooks with package manager defaults, and writes the entire `.claude/` directory cleanly so removed stacks leave no orphaned files
+3. **Generation** (`src/generator.ts`): Merges core skills + stack-specific skills, resolves hooks with package manager defaults (allowlisting every hook command first), and writes the `.claude/` directory cleanly so removed stacks leave no orphaned files; `.claude/settings.json` is merged rather than overwritten
 
 ### Directory Structure
 
@@ -40,7 +40,9 @@ bunx claude-toolkit refresh      # Regenerate only if the toolkit version change
   - `index.ts`: Public API exports (primarily `defineConfig()` and `detectStacks()`)
   - `types.ts`: `ClaudeToolkitConfig`, `StackPack`, `StackName` type definitions and interfaces
   - `detect.ts`: Stack detection by scanning dependencies and config files; returns a list of detected stacks with reasons
-  - `generator.ts`: Loads stack packs from `stacks/*/stack.json`, merges them with core assets, and writes `.claude/` and supporting config files (biome.json, tsconfig.json if scaffolding is enabled). Also owns the `.claude/.toolkit-version` marker (`readToolkitVersion()`, `readMarker()`) and validates `git.protectedBranches` before quoting them into the branch guard
+  - `generator.ts`: Loads stack packs from `stacks/*/stack.json`, merges them with core assets, and writes `.claude/` and supporting config files (biome.json, tsconfig.json if scaffolding is enabled). Also owns the `.claude/.toolkit-version` marker (`readToolkitVersion()`, `readMarker()`), validates `git.protectedBranches` before quoting them into the branch guard, allowlists hook commands in `resolveConfig`, and merges `.claude/settings.json` (`generateSettings`)
+  - `hook-commands.ts`: The hook-command allowlist (`HOOK_COMMAND_PATTERN`, `isAllowedHookCommand`, `assertValidHookCommands`), `DEFAULT_HOOKS`, and the POSIX `sh` builders for the PostToolUse hooks and the skill-eval command; every toolkit hook command starts with a `# claude-toolkit:<id>` marker line
+  - `settings-merge.ts`: Pure merge of the toolkit's hooks and defaults into an existing `settings.json`; it owns only `# claude-toolkit:` hook entries plus the unmarked entries 0.17 and earlier wrote
   - `refresh-hint.ts`: Builds the "add a `prepare` script" hint printed by bare CLI runs (pure; per-package-manager wording, `postinstall` for Yarn 2+)
   - `utils.ts`: File I/O helpers (`readJson`, `writeFileEnsureDir`, `copyDir`, `exists`, `removePath`)
 
@@ -49,7 +51,7 @@ bunx claude-toolkit refresh      # Regenerate only if the toolkit version change
 
 - **`core/`** — Always-included assets (generated into `.claude/`)
   - `skills/`: Core skills (systematic-debugging, testing-patterns, typescript-conventions, verification-before-completion, code-style) — referenced by name in `generator.ts`
-  - `hooks/`: `skill-eval.cjs` (the UserPromptSubmit skill-suggestion hook) and `skill-rules.schema.json`. The PostToolUse format/test/type-check hooks are not files here; `generator.ts` writes them inline into `settings.json`
+  - `hooks/`: `skill-eval.cjs` (the UserPromptSubmit hook: prints one advisory line naming relevant skills), `hook-input.cjs` (fs-only helper the PostToolUse hooks call: `path`, `has-tool`, `context`) and `skill-rules.schema.json`. The PostToolUse hook commands themselves are built by `src/hook-commands.ts` and written into `settings.json`
   - `commands/`: CLI commands under the `ct:` namespace (code-quality, pr-review, onboard, ticket, etc.)
   - `agents/`: Agent definitions (code-reviewer, github-workflow)
 
@@ -85,11 +87,12 @@ bunx claude-toolkit refresh      # Regenerate only if the toolkit version change
 - Skill names to include in `.claude/skills/`
 - Directory → skill mappings (e.g., `src/components/` → `ct-solidjs-component-patterns`)
 - Hook overrides (e.g., a stack can override the default test runner)
-- File extensions (e.g., `.tsx` for SolidJS)
+- File extensions (descriptive since 0.18.0: the format hook matches .js/.jsx/.ts/.tsx/.mjs/.cjs/.mts/.cts regardless of stack)
 
 **Idempotent generation**: The CLI is idempotent — running it twice with the same config produces identical output. This is critical for `claude-toolkit refresh`, which runs from consumers' `prepare` scripts and must not modify committed files. Specifically:
 
 - `.claude/` is always **regenerated cleanly** (old entries removed, new ones written)
+- `settings.json` is merged; the toolkit owns only `# claude-toolkit:`-marked hook entries and fills missing defaults (it also removes the unmarked entries 0.17 and earlier wrote). The user's other keys and hooks are kept, and two runs produce byte-identical output
 - `claude-toolkit.config.ts` is **only created on first run**; later runs never edit it
 - `biome.json` and `tsconfig.json` are **only scaffolded by bare runs, never overwritten** (`refresh` passes `scaffold: false`)
 - the CLI **never edits the consumer's `package.json`**; it only prints the `prepare` hint
@@ -101,6 +104,8 @@ bunx claude-toolkit refresh      # Regenerate only if the toolkit version change
 - `--update` merges detected stacks into the config and regenerates in one step
 
 **Nothing runs at install time**: shipped code (`bin/ src/ core/ stacks/ templates/`) must not use `child_process`, `process.env`, `Bun.spawn`, `Bun.$`, `execSync`, `execFile` or `eval(`, and `package.json` must not define `preinstall`/`install`/`postinstall`. `bun run check:pack` enforces both in CI and before every publish. Dev-only code that needs a shell lives in `scripts/` and `tests/`.
+
+**Hook commands are allowlisted**: every config value placed into a hook command must pass `isAllowedHookCommand` (`src/hook-commands.ts`: the `HOOK_COMMAND_PATTERN` characters plus a first word that names a program, never `eval`/`exec`/`command`/`.`/`source`/`sh -c`) in `resolveConfig`, before anything is written, and branch names must pass `BRANCH_NAME_PATTERN`; an invalid value throws an error naming its field and value. Generated hooks are POSIX `sh`, read their input through `core/hooks/hook-input.cjs`, and always exit 0 (only the protected-branch guard blocks). Never interpolate an unvalidated value into a hook command.
 
 ### Common Development Patterns
 
@@ -134,6 +139,6 @@ bunx claude-toolkit refresh      # Regenerate only if the toolkit version change
   - `package.json`, `tsconfig.json`, `biome.json`
 
 - **Generated** (in `.gitignore`, not tracked):
-  - `.claude/`: Generated configuration and skills (regenerated cleanly on every run)
+  - `.claude/`: Generated configuration and skills (regenerated cleanly on every run; `settings.json` is merged)
   - `CLAUDE.local.md`: Local overrides of CLAUDE.md (user-specific)
   - `.planning/`: Planning and audit artifacts

@@ -51,9 +51,10 @@ export default defineConfig({
   stacks: ["solidjs", "rust-wasm", "cloudflare", "protobuf"],
   packageManager: "bun",
   hooks: {
-    formatter: "bun run prettier --write",
+    formatter: "bun run biome format --write",
     testRunner: "bun run vitest run",
     typeCheck: "bun run tsc --noEmit",
+    typeCheckOnEdit: true,
     extraChecks: ["cargo check --target wasm32-unknown-unknown"],
   },
   git: {
@@ -133,9 +134,9 @@ Stacks in your config that are no longer detected are reported but left unchange
 
 - **Skill Evaluation Engine** — Analyzes prompts and suggests relevant skills
 - **Main Branch Protection** — Prevents accidental edits on protected branches
-- **Auto-formatting** — Formats files after edits _(not yet functional — fixed in 0.18.0)_
-- **Auto-testing** — Runs related tests when test files change _(not yet functional — fixed in 0.18.0)_
-- **Type checking** — Checks TypeScript types on save _(not yet functional — fixed in 0.18.0)_
+- **Auto-formatting** — Formats each JS/TS file Claude edits with `hooks.formatter` (Biome by default)
+- **Auto-testing** — Runs `hooks.testRunner` on a test file when Claude edits it
+- **Type checking** — Opt in with `hooks.typeCheckOnEdit: true` to run `hooks.typeCheck` after each TypeScript edit
 
 ### Core Skills
 
@@ -158,6 +159,34 @@ Stacks in your config that are no longer detected are reported but left unchange
 
 - `ct-code-reviewer` — Senior code reviewer (Opus)
 - `ct-github-workflow` — Git workflow assistant (Sonnet)
+
+## Hooks
+
+The generated `.claude/settings.json` registers these hooks. Each command is plain POSIX `sh` (Claude Code runs hooks with `sh` on macOS and Linux and with Git Bash on Windows) and needs `node` on the `PATH`. Windows without Git Bash, where Claude Code falls back to PowerShell, is not supported.
+
+| Hook               | Runs when Claude…                                          | Config                                             | Default                        |
+| ------------------ | ---------------------------------------------------------- | -------------------------------------------------- | ------------------------------ |
+| Skill suggestions  | receives a prompt                                          | always on                                          | on                             |
+| Protected branches | edits any file on a protected branch — the edit is blocked | `git.protectedBranches`                            | `["main"]`                     |
+| Format             | edits a `.js .jsx .ts .tsx .mjs .cjs .mts .cts` file       | `hooks.formatter`                                  | `bun run biome format --write` |
+| Test               | edits a `*.test.*` or `*.spec.*` file (js/jsx/ts/tsx)      | `hooks.testRunner` (runs that file)                | `bun run vitest run`           |
+| Type-check         | edits a `.ts .tsx .mts .cts` file                          | `hooks.typeCheck` + `hooks.typeCheckOnEdit: true`  | off                            |
+| Extra checks       | edits a `.rs` file                                         | `hooks.extraChecks`                                | none                           |
+| Install            | edits `package.json`                                       | `hooks.installCommand` + `hooks.autoInstall: true` | off                            |
+
+- **They never block.** The format, test, type-check, extra-check and install hooks always exit 0. When a command fails, Claude gets the last lines of its output as context next to the edit and decides what to do. The install hook also writes the last 20 lines of its output to Claude Code's debug log (`claude --debug-file <path>`).
+- **They skip missing tools and ignored files.** A hook does nothing unless its tool is installed: the word after `run`, `exec`, `x`, `npx` or `bunx` must be a `node_modules/.bin` entry, a `package.json` script or a command on the `PATH`; a command without such a prefix (e.g. `tsc --noEmit`) must itself be on the `PATH` — use `bun run tsc --noEmit`. Tools are looked up in the edited file's checkout. In a Claude Code worktree (under `.claude/worktrees/`), Claude Code reads the worktree's own `.claude/`. With `.claude/` gitignored, a fresh worktree has none, so the toolkit's hooks, skills, commands and permission rules only apply there after you install dependencies in the worktree. That install provides the tools the hooks look for, and the `prepare` line then runs `claude-toolkit refresh` to generate the worktree's `.claude/`. The default formatter stays silent until Biome is installed. Files that git ignores (build output, dependencies) are skipped too. If your `biome.json` excludes files with `files.includes`, add `--no-errors-on-unmatched` to the formatter so edits to excluded files are not reported as failures.
+- **Commands are allowlisted.** A hook command may only contain letters, digits, spaces and `. _ / @ : = + -`, and must start with the program to run (not `eval`, `exec`, `command`, `.`, `source`, a shell with `-c`, or an option). Anything else — quotes, `$`, `;`, `|`, `&&`, redirects, newlines — stops `bunx claude-toolkit` and `claude-toolkit refresh` with an error naming the field and the value. Put such a command in a `package.json` script and reference the script:
+
+  ```json
+  { "scripts": { "typecheck:all": "tsc --noEmit -p tsconfig.app.json && tsc --noEmit -p tsconfig.node.json" } }
+  ```
+
+  ```ts
+  hooks: { typeCheck: "bun run typecheck:all", typeCheckOnEdit: true },
+  ```
+
+- **`settings.json` is merged, not overwritten.** The toolkit owns only hook entries whose command starts with `# claude-toolkit:` (and the unmarked entries that 0.17 and earlier wrote), and it sets `includeCoAuthoredBy` and its `env` defaults only when they are missing. Your `permissions` (including `deny` rules), your own hooks, `model` and every other key survive regeneration. A `settings.json` that is not a JSON object is saved as `settings.json.bak` before a new one is written.
 
 ## Project Setup
 
@@ -185,6 +214,13 @@ CLAUDE.md                 # tracked — project-specific documentation
 1. Run `bunx claude-toolkit` once to regenerate `.claude/`.
 2. Add `"prepare": "claude-toolkit refresh || exit 0"` to your `package.json` scripts (the CLI prints the exact line for your project, including the Yarn 2+ and existing-`prepare` variants).
 3. If you added `claude-toolkit` to Bun's `trustedDependencies` or pnpm's `onlyBuiltDependencies` so its install script could run, remove it — there is no install script any more.
+
+## Upgrading to 0.18
+
+- **Hook commands are allowlisted.** If `bunx claude-toolkit` now stops with `Invalid hooks.<field> in the claude-toolkit config`, move that command into a `package.json` script and reference it as `bun run <script>` (see [Hooks](#hooks)).
+- **The edit hooks now run.** The format and test hooks never fired before 0.18.0 (they read an environment variable Claude Code does not set). They now run after Claude's edits, but only when their tool is installed. Type-check on edit and auto-install are off unless you set `hooks.typeCheckOnEdit` or `hooks.autoInstall`.
+- **New configs format with Biome.** Existing configs keep their `formatter`; a Prettier formatter keeps working when Prettier is installed.
+- **Your `settings.json` changes now survive regeneration** (see [Hooks](#hooks)).
 
 ## Documentation
 

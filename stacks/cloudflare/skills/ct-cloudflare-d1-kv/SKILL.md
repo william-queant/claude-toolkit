@@ -36,9 +36,11 @@ let results = db.batch(vec![
 ```bash
 wrangler d1 migrations create DB "add_users_table"
 # Edit migrations/0001_add_users_table.sql, then:
-wrangler d1 migrations apply DB --local   # test locally first
-wrangler d1 migrations apply DB --remote
+wrangler d1 migrations apply DB --local    # test locally first
+wrangler d1 migrations apply DB --remote   # production: only after explicit confirmation
 ```
+
+`--remote` changes the production database: run it only after a successful `--local` run and the user's explicit confirmation.
 
 ## KV Conventions
 
@@ -180,7 +182,7 @@ It does **not** help D1 or KV: D1 routing is governed by the primary-instance lo
 3. **KV as primary store** -- Eventually consistent, no queries. Cache only.
 4. **Skipping batch** -- Each D1 call is a network round trip.
 5. **KV without TTL** -- Stale data persists indefinitely.
-6. **Untested migrations** -- Always `--local` before `--remote`.
+6. **Untested or unconfirmed migrations** -- Always `--local` before `--remote`, and `--remote` only with the user's explicit confirmation.
 7. **Sequential awaits on independent reads** -- each is a round trip; use `try_join!`/`Promise.all`.
 8. **Per-row query loops (N+1)** -- batch into one `IN (...)`/JOIN or `db.batch()`.
 9. **Awaiting cache/KV writes before responding** -- use `ctx.waitUntil()` so puts don't add to TTFB.

@@ -8,7 +8,7 @@
  * - Intent detection
  * - Content pattern matching
  *
- * Outputs a structured reminder with matched skills and reasons.
+ * Prints one advisory line naming the skills that may be relevant, with reasons.
  */
 
 const fs = require("node:fs");
@@ -265,15 +265,15 @@ function formatConfidence(score, minScore) {
 	return "LOW";
 }
 
-// Strip characters that could break out of the <user-prompt-submit-hook> block or
-// forge system-reminder content when a rule-derived string is echoed into output (F04).
+// Strip characters that could forge markup (such as a fake system reminder) or start a
+// new line when a rule-derived string is echoed into the output (F04).
 function sanitize(value) {
 	return String(value)
 		.replace(/[<>\r\n]/g, " ")
 		.trim();
 }
 
-// Confirm the skill actually ships before ordering Claude to invoke it (F03).
+// Confirm the skill actually ships before suggesting it (F03).
 // baseDir is .claude/skills at runtime (path.join(__dirname, "..", "skills")).
 function skillExists(name, skillsDir) {
 	try {
@@ -325,41 +325,18 @@ function evaluate(prompt, opts = {}) {
 		skillExists(n, skillsDir),
 	);
 
-	let output = "<user-prompt-submit-hook>\n";
-	output += "SKILL ACTIVATION REQUIRED\n\n";
+	// One factual, advisory line. Claude Code adds this hook's plain stdout to Claude's
+	// context, and text framed as system commands can trip prompt-injection defenses.
+	const items = topMatches.map((match) => {
+		const confidence = formatConfidence(match.score, minConfidenceScore).toLowerCase();
+		const reasons = showMatchReasons ? match.reasons.slice(0, 3).map(sanitize) : [];
+		const detail = reasons.length > 0 ? `${confidence}: ${reasons.join("; ")}` : confidence;
+		return `${sanitize(match.name)} (${detail})`;
+	});
+	const related =
+		relatedSkills.length > 0 ? ` Related: ${relatedSkills.map(sanitize).join(", ")}.` : "";
 
-	if (filePaths.length > 0) {
-		output += `Detected file paths: ${filePaths.map(sanitize).join(", ")}\n\n`;
-	}
-
-	output += "Matched skills (ranked by relevance):\n";
-
-	for (let i = 0; i < topMatches.length; i++) {
-		const match = topMatches[i];
-		const confidence = formatConfidence(match.score, minConfidenceScore);
-		output += `${i + 1}. ${sanitize(match.name)} (${confidence} confidence)\n`;
-		if (showMatchReasons && match.reasons.length > 0) {
-			output += `   Matched: ${match.reasons.slice(0, 3).map(sanitize).join(", ")}\n`;
-		}
-	}
-
-	if (relatedSkills.length > 0) {
-		output += `\nRelated skills to consider: ${relatedSkills.map(sanitize).join(", ")}\n`;
-	}
-
-	output += "\nBefore implementing, you MUST:\n";
-	output += "1. EVALUATE: State YES/NO for each skill with brief reasoning\n";
-	output += "2. ACTIVATE: Invoke the Skill tool for each YES skill\n";
-	output += "3. IMPLEMENT: Only proceed after skill activation\n";
-	output += "\nExample evaluation:\n";
-	output += `- ${sanitize(topMatches[0].name)}: YES - [your reasoning]\n`;
-	if (topMatches.length > 1) {
-		output += `- ${sanitize(topMatches[1].name)}: NO - [your reasoning]\n`;
-	}
-	output += "\nDO NOT skip this step. Invoke relevant skills NOW.\n";
-	output += "</user-prompt-submit-hook>";
-
-	return output;
+	return `claude-toolkit — skills that may be relevant: ${items.join(", ")}.${related} Invoke them with the Skill tool if they apply.`;
 }
 
 // Main execution
