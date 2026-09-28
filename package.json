@@ -25,6 +25,8 @@
 		"lint": "biome check --write",
 		"lint:check": "biome check",
 		"test": "bun test",
+		"check:pack": "bun scripts/check-pack.ts",
+		"check:smoke": "bun scripts/check-smoke.ts",
 		"prepare": "husky"
 	},
 	"lint-staged": {
