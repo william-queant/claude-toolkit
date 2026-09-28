@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.19.3 (2026-09-28)
+
+- fix(skill-eval): print advisory skill suggestions instead of imperative pseudo-tags
+
 ## 0.19.2 (2026-09-28)
 
 - fix(settings): merge settings.json instead of overwriting it

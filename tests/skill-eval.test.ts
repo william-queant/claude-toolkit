@@ -160,11 +160,12 @@ describe("output sanitization + ship-check (F04, F03)", () => {
 			rules,
 			skillsDir: SKILLS_DIR_2,
 		});
-		// The reason echoes the keyword; it must not contain a raw closing tag or newline injection.
-		expect(out).not.toContain("</user-prompt-submit-hook>\n<system-reminder>");
+		// The reason echoes the keyword; markup and line breaks must be stripped from it.
+		expect(out).toContain("ct-testing-patterns");
+		expect(out).not.toMatch(/[<>\r\n]/);
 	});
 
-	test("does NOT emit ACTIVATE for a skill that does not ship (F03)", () => {
+	test("does not suggest a skill that does not ship (F03)", () => {
 		const rules = {
 			config: {
 				minConfidenceScore: 3,
@@ -192,7 +193,7 @@ describe("output sanitization + ship-check (F04, F03)", () => {
 		expect(evaluate("do the ghostword thing", { rules, skillsDir: SKILLS_DIR_2 })).toBe("");
 	});
 
-	test("still activates a skill that DOES ship", () => {
+	test("still suggests a skill that does ship", () => {
 		const rules = {
 			config: {
 				minConfidenceScore: 3,
@@ -220,5 +221,69 @@ describe("output sanitization + ship-check (F04, F03)", () => {
 		expect(evaluate("please flurble", { rules, skillsDir: SKILLS_DIR_2 })).toContain(
 			"ct-testing-patterns",
 		);
+	});
+});
+
+const ADVISORY_PREFIX = "claude-toolkit — skills that may be relevant: ";
+const ADVISORY_SUFFIX = " Invoke them with the Skill tool if they apply.";
+const REMOVED_PHRASES = [
+	"<user-prompt-submit-hook>",
+	"</user-prompt-submit-hook>",
+	"SKILL ACTIVATION REQUIRED",
+	"MUST",
+	"DO NOT skip",
+	"NOW",
+	"EVALUATE",
+	"ACTIVATE",
+	"IMPLEMENT",
+];
+
+/** Two shipped skills that match "flurble wibble"; one names a related skill. */
+function twoSkillRules(showMatchReasons: boolean) {
+	return {
+		...makeRules({ showMatchReasons }),
+		skills: {
+			"ct-testing-patterns": {
+				description: "x",
+				priority: 5,
+				triggers: { keywords: ["flurble"] },
+				relatedSkills: ["ct-code-style"],
+			},
+			"ct-systematic-debugging": {
+				description: "x",
+				priority: 5,
+				triggers: { keywords: ["flurble", "wibble"] },
+			},
+		},
+	};
+}
+
+describe("advisory output (B5)", () => {
+	test("one line naming the skill, its confidence and why it matched", () => {
+		const out = evaluate("please flurble this", { rules: makeRules(), skillsDir: SKILLS_DIR });
+		expect(out).toBe(
+			`${ADVISORY_PREFIX}ct-testing-patterns (low: keyword "flurble").${ADVISORY_SUFFIX}`,
+		);
+	});
+
+	test("ranks several skills and names related ones", () => {
+		const out = evaluate("flurble wibble", { rules: twoSkillRules(false), skillsDir: SKILLS_DIR });
+		expect(out).toBe(
+			`${ADVISORY_PREFIX}ct-systematic-debugging (high), ct-testing-patterns (low). Related: ct-code-style.${ADVISORY_SUFFIX}`,
+		);
+	});
+
+	test("none of the removed imperative phrases appear", () => {
+		const outputs = [
+			evaluate("please flurble this", { rules: makeRules(), skillsDir: SKILLS_DIR }),
+			evaluate("flurble wibble src/a.ts", { rules: twoSkillRules(true), skillsDir: SKILLS_DIR }),
+		];
+		for (const out of outputs) {
+			expect(out.startsWith(ADVISORY_PREFIX)).toBe(true);
+			expect(out).not.toContain("\n");
+			for (const phrase of REMOVED_PHRASES) {
+				expect([phrase, out.includes(phrase)]).toEqual([phrase, false]);
+			}
+		}
 	});
 });
