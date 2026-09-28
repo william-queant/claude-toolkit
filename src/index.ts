@@ -21,7 +21,7 @@ export type {
  *   stacks: ['solidjs', 'rust-wasm', 'cloudflare'],
  *   packageManager: 'bun',
  *   hooks: {
- *     formatter: 'bun run prettier --write',
+ *     formatter: 'bun run biome format --write',
  *     testRunner: 'bun run vitest run',
  *   },
  * })

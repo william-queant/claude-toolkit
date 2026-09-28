@@ -13,6 +13,13 @@ import type { HookConfig } from "./types.js";
  */
 export const HOOK_COMMAND_PATTERN = /^[A-Za-z0-9 ._/@:=+-]+$/;
 
+/** Hook commands for new configs: the config template and the first run's in-memory config. */
+export const DEFAULT_HOOKS = {
+	formatter: "bun run biome format --write",
+	testRunner: "bun run vitest run",
+	typeCheck: "bun run tsc --noEmit",
+} as const satisfies HookConfig;
+
 /** HookConfig fields that hold a single command. */
 const COMMAND_FIELDS = ["formatter", "testRunner", "typeCheck", "installCommand"] as const;
 

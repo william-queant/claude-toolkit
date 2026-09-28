@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.19.1 (2026-09-28)
+
+- fix(config): default the formatter to Biome, matching the scaffolded biome.json
+
 ## 0.19.0 (2026-09-28)
 
 - feat(hooks): make auto-install and type-check-on-edit opt-in

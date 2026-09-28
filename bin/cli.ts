@@ -23,6 +23,7 @@ import { readFile, writeFile } from "node:fs/promises";
 import { basename, join, resolve } from "node:path";
 import { detectStacks } from "../src/detect.js";
 import { generate, readMarker, readToolkitVersion } from "../src/generator.js";
+import { DEFAULT_HOOKS } from "../src/hook-commands.js";
 import { buildRefreshHint } from "../src/refresh-hint.js";
 import type { ClaudeToolkitConfig } from "../src/types.js";
 
@@ -84,9 +85,9 @@ export default defineConfig({
 	${stacksLiteral},
 	packageManager: "bun",
 	hooks: {
-		formatter: "bun run prettier --write",
-		testRunner: "bun run vitest run",
-		typeCheck: "bun run tsc --noEmit",
+		formatter: "${DEFAULT_HOOKS.formatter}",
+		testRunner: "${DEFAULT_HOOKS.testRunner}",
+		typeCheck: "${DEFAULT_HOOKS.typeCheck}",
 	},
 	git: {
 		branchPrefix: "dev",
@@ -142,11 +143,7 @@ async function run(projectDir: string, options: RunOptions = {}): Promise<void> 
 		config = {
 			stacks: detected.map((d) => d.name),
 			packageManager: "bun",
-			hooks: {
-				formatter: "bun run prettier --write",
-				testRunner: "bun run vitest run",
-				typeCheck: "bun run tsc --noEmit",
-			},
+			hooks: { ...DEFAULT_HOOKS },
 			git: { branchPrefix: "dev", protectedBranches: ["main"] },
 		};
 	} else {
