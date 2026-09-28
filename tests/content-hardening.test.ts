@@ -58,3 +58,17 @@ describe("command pre-approvals (B6)", () => {
 		}
 	});
 });
+
+describe("agents (B6)", () => {
+	test("ct-code-reviewer is read-only and treats PR text as data", async () => {
+		const text = await read("core/agents/ct-code-reviewer.md");
+		expect(frontmatter(text)).toMatch(/^tools: Read, Grep, Glob$/m);
+		expect(text).toContain(UNTRUSTED);
+	});
+
+	test("ct-github-workflow confirms before pushing or opening a PR", async () => {
+		expect(await read("core/agents/ct-github-workflow.md")).toContain(
+			"Confirm with the user before `git push` or `gh pr create`; never force-push shared branches.",
+		);
+	});
+});

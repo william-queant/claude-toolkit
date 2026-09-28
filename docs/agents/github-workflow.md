@@ -92,6 +92,7 @@ Same conventional format as commits, under 70 characters.
 
 ## Principles
 
+- **Confirm first** -- asks before `git push` or `gh pr create`; never force-pushes shared branches
 - **Small PRs** -- if a PR touches more than 10 files or 300 lines, consider splitting
 - **One concern per PR** -- do not mix a feature with a refactor with a dependency upgrade
 - **Commit history matters** -- each commit should be a logical, buildable unit

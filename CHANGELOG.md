@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.19.5 (2026-09-28)
+
+- fix(agents): make ct-code-reviewer read-only and confirm before push or PR
+
 ## 0.19.4 (2026-09-28)
 
 - fix(commands): narrow package-manager grants, drop git push, treat issue and PR text as data
