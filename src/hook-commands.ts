@@ -224,7 +224,7 @@ export function buildPostToolUseHooks(hooks: HookConfig): CommandHook[] {
 			timeout: 90,
 		});
 	}
-	if (hooks.typeCheck) {
+	if (hooks.typeCheckOnEdit && hooks.typeCheck) {
 		edits.push({
 			id: "typecheck",
 			patterns: TYPECHECK_PATTERNS,
@@ -247,7 +247,7 @@ export function buildPostToolUseHooks(hooks: HookConfig): CommandHook[] {
 		command: editHookCommand(hook),
 		timeout: hook.timeout,
 	}));
-	if (hooks.installCommand) {
+	if (hooks.autoInstall && hooks.installCommand) {
 		result.push({
 			type: "command",
 			command: installHookCommand(hooks.installCommand),

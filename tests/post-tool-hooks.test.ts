@@ -55,7 +55,12 @@ const DEFAULTS: HookConfig = {
 	typeCheck: "bun run tsc --noEmit",
 };
 /** Every PostToolUse hook switched on. */
-const ALL: HookConfig = { ...DEFAULTS, extraChecks: ["cargo check"] };
+const ALL: HookConfig = {
+	...DEFAULTS,
+	typeCheckOnEdit: true,
+	autoInstall: true,
+	extraChecks: ["cargo check"],
+};
 
 describe("commandTools", () => {
 	test.each([
@@ -165,6 +170,22 @@ describe("generated PostToolUse hooks", () => {
 			expect(install).toContain('out="$(bun install 2>&1)"');
 			expect(install).toContain(`printf '%s\\n' "$out" | tail -n 20 >&2`);
 			expect(install).not.toContain("/dev/null 2>&1 &&");
+		});
+	});
+
+	test("type-check on edit is generated only with typeCheckOnEdit", async () => {
+		await withDir(async (dir) => {
+			expect((await postToolUse(dir, DEFAULTS)).has("typecheck")).toBe(false);
+			expect(
+				(await postToolUse(dir, { ...DEFAULTS, typeCheckOnEdit: true })).has("typecheck"),
+			).toBe(true);
+		});
+	});
+
+	test("auto-install is generated only with autoInstall", async () => {
+		await withDir(async (dir) => {
+			expect((await postToolUse(dir, DEFAULTS)).has("install")).toBe(false);
+			expect((await postToolUse(dir, { autoInstall: true })).has("install")).toBe(true);
 		});
 	});
 

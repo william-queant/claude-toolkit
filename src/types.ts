@@ -13,18 +13,26 @@ export type StackName =
 	| "esnext"
 	| (string & {});
 
-/** Hook configuration for post-tool-use automation */
+/**
+ * Hook configuration for post-tool-use automation. Every command may only contain
+ * letters, digits, spaces and . _ / @ : = + - (anything else fails generation);
+ * put pipes, quotes or && in a package.json script and use "bun run <script>".
+ */
 export interface HookConfig {
-	/** Formatter command (e.g., "bun run prettier --write") */
+	/** Formatter run on each edited JS/TS file (e.g., "bun run biome format --write") */
 	formatter?: string;
-	/** Test runner command (e.g., "bun run vitest run") */
+	/** Test runner run on each edited test file (e.g., "bun run vitest run") */
 	testRunner?: string;
-	/** Type checker command (e.g., "bun run tsc --noEmit") */
+	/** Type checker command (e.g., "bun run tsc --noEmit"); runs on edit only with typeCheckOnEdit */
 	typeCheck?: string;
-	/** Additional check commands (e.g., ["cargo check --target wasm32-unknown-unknown"]) */
+	/** Run typeCheck after every .ts/.tsx/.mts/.cts edit. Default: false */
+	typeCheckOnEdit?: boolean;
+	/** Additional check commands run after .rs edits (e.g., ["cargo check --target wasm32-unknown-unknown"]) */
 	extraChecks?: string[];
 	/** Dependency install command (e.g., "bun install") — inferred from packageManager if omitted */
 	installCommand?: string;
+	/** Run installCommand after package.json edits. Default: false */
+	autoInstall?: boolean;
 }
 
 /** Git workflow configuration */

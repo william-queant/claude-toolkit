@@ -12,6 +12,8 @@ export default defineConfig({
 		formatter: "bun run prettier --write",
 		testRunner: "bun run vitest run",
 		typeCheck: "bun run tsc --noEmit",
+		// typeCheckOnEdit: true, // also run typeCheck after every .ts/.tsx edit (slow on large projects)
+		// autoInstall: true, // run the install command after every package.json edit
 		// extraChecks: ['cargo check --target wasm32-unknown-unknown'],
 	},
 

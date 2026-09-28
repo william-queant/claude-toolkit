@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.19.0 (2026-09-28)
+
+- feat(hooks): make auto-install and type-check-on-edit opt-in
+
 ## 0.18.1 (2026-09-28)
 
 - fix(hooks): read the edited file from stdin so the PostToolUse hooks run
