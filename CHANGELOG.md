@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.17.0 (unreleased)
+## 0.17.0 (2026-09-28)
 
 Nothing runs at install time any more. The `postinstall` script that regenerated `.claude/` is gone; projects opt in with one line in their own `package.json`, and the new `claude-toolkit refresh` does the work. The package also stops shipping `docs/`, and releases move to npm trusted publishing behind a tarball guard.
 
