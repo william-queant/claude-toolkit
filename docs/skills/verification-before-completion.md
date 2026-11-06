@@ -17,7 +17,7 @@ Run the full test suite (or related tests) and show the output. If any test fail
 
 ### 2. Type Checks Pass
 
-Run the type checker with no errors (`tsc --noEmit` or equivalent). Zero errors, zero warnings on changed files.
+Run the project's type-check script (or `tsc --noEmit`) with no errors. Zero errors, zero warnings on changed files. When the root `tsconfig` only lists `references`, run `tsc -b` or the project's script instead: a plain `tsc --noEmit` there checks no files and reports 0 errors.
 
 ### 3. Linting Passes
 
@@ -72,7 +72,7 @@ When reporting completion, include concrete evidence:
 - `npm test -- --grep "auth"` output: all green
 
 ### Type check
-- `tsc --noEmit`: 0 errors
+- Type check (the project's script): 0 errors
 
 ### Security
 - `bun audit`: 0 vulnerabilities

@@ -4,7 +4,7 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { generate } from "../src/generator.ts";
-import { commandTools } from "../src/hook-commands.ts";
+import { commandTools, parseHookCommand, type Scope } from "../src/hook-commands.ts";
 import type { ClaudeToolkitConfig, HookConfig } from "../src/types.ts";
 
 // On Windows, System32 tools are not Git Bash; skip the shell tests rather than misfire.
@@ -12,6 +12,12 @@ const found = Bun.which("sh");
 const sh = found && !/system32/i.test(found) ? found : null;
 const git = Bun.which("git");
 const canRunHooks = Boolean(sh && git && Bun.which("node") && Bun.which("bun"));
+// Debian and Ubuntu run hooks with dash; macOS and Git Bash with bash.
+const SHELLS = ["sh", "bash", "dash"]
+	.map((name) => [name, Bun.which(name)] as const)
+	.filter(
+		(entry): entry is readonly [string, string] => entry[1] !== null && !/system32/i.test(entry[1]),
+	);
 // Never let an outer git hook's environment redirect git to the real repo.
 const env: Record<string, string | undefined> = { ...process.env };
 for (const key of ["GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE"]) delete env[key];
@@ -79,6 +85,105 @@ describe("commandTools", () => {
 	});
 });
 
+const check = (tool: string, dir: string, scope: Scope, path: boolean, pnp = false) => ({
+	tool,
+	dir,
+	scope,
+	path,
+	pnp,
+});
+
+describe("parseHookCommand", () => {
+	test.each([
+		["bun run --cwd apps/web vitest run", check("vitest", "apps/web", "any", true)],
+		["bun run --cwd=apps/web vitest run", check("vitest", "apps/web", "any", true)],
+		["bun --cwd=apps/web run vitest run", check("vitest", "apps/web", "any", true)],
+		["bun run --env-file .env.test vitest run", check("vitest", ".", "any", true)],
+		["bun run --bun --silent vitest run", check("vitest", ".", "any", true)],
+		["NODE_ENV=test bun run vitest run", check("vitest", ".", "any", true)],
+		["bun x tsc --noEmit", check("tsc", ".", "bin", true)],
+		["bunx -p typescript tsc --noEmit", check("tsc", ".", "bin", true)],
+		["bunx --bun biome format", check("biome", ".", "bin", true)],
+		["npm --prefix apps/web run test", check("test", "apps/web", "script", false)],
+		["npm -C apps/web run test", check("test", "apps/web", "script", false)],
+		["npm run lint:check", check("lint:check", ".", "script", false)],
+		["npm exec -w web -- vitest run", check("vitest", ".", "bin", false)],
+		["npm --prefix apps/web exec -- vitest run", check("vitest", "apps/web", "local", false)],
+		["npx -p typescript tsc --noEmit", check("tsc", ".", "bin", false)],
+		["npx prettier --write", check("prettier", ".", "bin", false)],
+		["npx lint", check("lint", ".", "bin", false)],
+		["pnpm -C apps/web exec vitest run", check("vitest", "apps/web", "bin", true)],
+		["pnpm --dir apps/web exec vitest run", check("vitest", "apps/web", "bin", true)],
+		["pnpm exec eslint --fix", check("eslint", ".", "bin", true)],
+		["pnpm run vitest run", check("vitest", ".", "script", false)],
+		["yarn --cwd apps/web run vitest run", check("vitest", "apps/web", "any", false, true)],
+		["yarn exec vitest run", check("vitest", ".", "bin", true, true)],
+		["npx --registry https://r.example vitest", check("vitest", ".", "bin", false)],
+		["npx --cache /tmp/c vitest run", check("vitest", ".", "bin", false)],
+		["npx --cache x vitest", check("vitest", ".", "bin", false)],
+		["bunx --registry https://r.example/ vitest", check("vitest", ".", "bin", true)],
+		["bunx --cache-dir x tsc", check("tsc", ".", "bin", true)],
+		["npm --userconfig x run test", check("test", ".", "script", false)],
+	])("%p is checked as %o", (command, expected) => {
+		expect(parseHookCommand(command).check).toEqual(expected);
+	});
+
+	test.each([
+		"bun run --filter web test",
+		"bun run -F web test",
+		"pnpm --filter web exec vitest run",
+		"pnpm -r run typecheck",
+		"npm run test --workspace web",
+		"yarn workspace web run vitest run",
+		"bun run --some-new-flag vitest run",
+		// bun prints usage and runs nothing.
+		"bun --cwd apps/web run vitest run",
+		"bun run scripts/fmt.mjs",
+		"bun run check.ts",
+		"bun run build.mjs",
+		"bun turbo run typecheck",
+		"pnpm turbo run typecheck",
+		"pnpm nx run web:typecheck",
+		"pnpm vitest run --project unit",
+		"pnpm recursive run typecheck",
+		"turbo run typecheck",
+		"nx run web:test",
+		"vitest run --dir src",
+		"cargo run --bin check",
+		"cargo run -p xtask -- lint",
+		"docker compose exec -T app npx tsc --noEmit",
+		"bun test",
+		"bun install",
+	])("%p is guarded on its runner only", (command) => {
+		expect(parseHookCommand(command).check).toBeNull();
+	});
+
+	test.each([
+		"npx --unknown-flag https://r.example vitest",
+		"bun x --cwd apps/web vitest",
+		"bunx --cwd apps/web vitest",
+		"npm exec --unknown-flag /tmp/x -- vitest",
+		"npx --yes",
+		"npx",
+		"bunx",
+	])("%p never runs unchecked", (command) => {
+		const parsed = parseHookCommand(command);
+		expect([command, parsed.check !== null || parsed.blocked === true]).toEqual([command, true]);
+	});
+
+	test("a blocked command skips right after the runner check", async () => {
+		await withDir(async (dir) => {
+			const hook = (await postToolUse(dir, { testRunner: "npx --yes" })).get("test") ?? "";
+			expect(hook).toContain("command -v npx >/dev/null 2>&1 || exit 0\nexit 0\n");
+		});
+	});
+
+	test("the runner is the first word that is not a VAR=value assignment", () => {
+		expect(parseHookCommand("NODE_ENV=test CI=1 bun run vitest run").runner).toBe("bun");
+		expect(parseHookCommand("cargo check").runner).toBe("cargo");
+	});
+});
+
 describe("generated PostToolUse hooks", () => {
 	test("each hook starts with its marker and the stdin preamble", async () => {
 		await withDir(async (dir) => {
@@ -119,8 +224,9 @@ describe("generated PostToolUse hooks", () => {
 			expect(format).toContain('git check-ignore -q -- "$f" 2>/dev/null && exit 0');
 			expect(format).toContain("command -v bun >/dev/null 2>&1 || exit 0");
 			expect(format).toContain(
-				`${HOOK_INPUT} has-tool biome || command -v biome >/dev/null 2>&1 || exit 0`,
+				`${HOOK_INPUT} has-tool biome || { found="$(command -v biome 2>/dev/null)" && case "$found" in /*) ;; *) false;; esac; } || exit 0`,
 			);
+			expect(format).not.toContain("command -v biome >/dev/null");
 			expect(format).toContain('out="$(bun run biome format --write "$f" 2>&1)" && exit 0');
 			expect(format).toContain(
 				`printf '%s\\n' "$out" | ${HOOK_INPUT} context "claude-toolkit format hook: bun run biome format --write failed for $f"`,
@@ -134,6 +240,67 @@ describe("generated PostToolUse hooks", () => {
 				(await postToolUse(dir, { formatter: "biome format --write" })).get("format") ?? "";
 			expect(format).toContain("command -v biome >/dev/null 2>&1 || exit 0");
 			expect(format).not.toContain("has-tool biome");
+		});
+	});
+
+	test("the reported --cwd command is looked up in that directory, not read as the tool", async () => {
+		await withDir(async (dir) => {
+			const hooks = await postToolUse(dir, { testRunner: "bun run --cwd apps/web vitest run" });
+			const testHook = hooks.get("test") ?? "";
+			expect(testHook).toContain(`${HOOK_INPUT} has-tool vitest apps/web ||`);
+			expect(testHook).not.toContain("apps/web >/dev/null");
+			expect(testHook).toContain('out="$(bun run --cwd apps/web vitest run "$f" 2>&1)" && exit 0');
+		});
+	});
+
+	test("no hook asks the shell about a word that is a path, and npx or npm exec never use the PATH", async () => {
+		await withDir(async (dir) => {
+			const commands = [
+				"bun run --cwd apps/web vitest run",
+				"bun run scripts/fmt.mjs",
+				"npx -p typescript tsc --noEmit",
+				"npm exec -w web -- vitest run",
+				"pnpm -C apps/web exec vitest run",
+				"yarn run vitest run",
+			];
+			for (const testRunner of commands) {
+				const hook = (await postToolUse(dir, { testRunner })).get("test") ?? "";
+				const words = [...hook.matchAll(/command -v (\S+)/g)].map((m) => m[1] ?? "");
+				expect([testRunner, words.length > 0]).toEqual([testRunner, true]);
+				for (const word of words) {
+					expect([testRunner, word, word.includes("/")]).toEqual([testRunner, word, false]);
+				}
+				if (/^(npx|npm) /.test(testRunner)) {
+					expect([testRunner, hook.includes("found=")]).toEqual([testRunner, false]);
+				}
+			}
+		});
+	});
+
+	test("a yarn hook also runs under Plug'n'Play, which has no node_modules", async () => {
+		await withDir(async (dir) => {
+			const hooks = await postToolUse(dir, { testRunner: "yarn run vitest run" });
+			expect(hooks.get("test")).toContain(
+				`[ -f .pnp.cjs ] || [ -f .pnp.js ] || ${HOOK_INPUT} has-tool vitest ||`,
+			);
+		});
+	});
+
+	test("a JS command run without a tool check skips a checkout with no installed dependencies", async () => {
+		await withDir(async (dir) => {
+			const skip =
+				'[ -d node_modules ] || [ -d "$top/node_modules" ] || [ -f .pnp.cjs ] || [ -f "$top/.pnp.cjs" ] || exit 0';
+			const unguarded = (await postToolUse(dir, { testRunner: "bun run --filter web test" })).get(
+				"test",
+			);
+			expect(unguarded).toContain(skip);
+			// The install hook must run in a fresh checkout.
+			const checked = (await postToolUse(dir, { testRunner: "bun run vitest run" })).get("test");
+			expect(checked).not.toContain(skip);
+			const cargo = (await postToolUse(dir, { extraChecks: ["cargo check"] })).get("extra-0");
+			expect(cargo).not.toContain(skip);
+			const install = (await postToolUse(dir, { autoInstall: true })).get("install");
+			expect(install).not.toContain(skip);
 		});
 	});
 
@@ -196,10 +363,15 @@ describe("generated PostToolUse hooks", () => {
 		});
 	});
 
-	test.skipIf(!sh)("every generated hook parses as sh", async () => {
+	test.each(SHELLS)("every generated hook parses as %s", async (_name, shell) => {
 		await withDir(async (dir) => {
-			for (const [id, command] of await postToolUse(dir, ALL)) {
-				const r = Bun.spawnSync([sh as string, "-n", "-c", command], { stderr: "pipe" });
+			const hooks = await postToolUse(dir, {
+				...ALL,
+				testRunner: "bun run --cwd apps/web vitest run",
+				extraChecks: ["cargo check", "yarn run lint", "npx -p typescript tsc --noEmit"],
+			});
+			for (const [id, command] of hooks) {
+				const r = Bun.spawnSync([shell, "-n", "-c", command], { stderr: "pipe" });
 				expect([id, r.exitCode, r.stderr.toString()]).toEqual([id, 0, ""]);
 			}
 		});

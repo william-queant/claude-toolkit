@@ -1,13 +1,14 @@
 /**
  * Input helper for the generated PostToolUse hooks. Filesystem only: it reads the
- * hook's JSON from stdin and, for has-tool, the package.json and node_modules/.bin of the
- * current directory (the hook first cds to the edited file's checkout). It never starts
- * a process and never reads environment variables.
+ * hook's JSON from stdin and, for has-tool, the package.json and node_modules/.bin files
+ * around the current directory (the hook first cds to the edited file's checkout). It
+ * never starts a process and never reads environment variables.
  *
  *   node hook-input.cjs path             Print tool_input.file_path; nothing on bad input.
- *   node hook-input.cjs has-tool <name>  Exit 0 when <name> is a node_modules/.bin entry
- *                                        or a package.json script in the current
- *                                        directory; exit 1 otherwise.
+ *   node hook-input.cjs has-tool <name> [<dir> [<scope>]]
+ *                                        Exit 0 when <name> is something a command run in
+ *                                        <dir> (default ".") can find, 1 otherwise. <scope>
+ *                                        is any (default), script, bin or local; see hasTool.
  *   node hook-input.cjs context <title>  Read command output from stdin and print it as
  *                                        PostToolUse additionalContext JSON.
  */
@@ -17,6 +18,8 @@ const path = require("node:path");
 
 // npm, pnpm and yarn create bare, .cmd and .ps1 shims; bun on Windows creates .exe and .bunx.
 const BIN_SUFFIXES = ["", ".cmd", ".ps1", ".exe", ".bunx"];
+// Where has-tool looks; an unknown scope counts as "any", so a newer hook works with this helper.
+const SCOPES = new Set(["any", "script", "bin", "local"]);
 // Code points below SPACE, and DEL, are control characters (newlines included).
 const SPACE = 0x20;
 const DEL = 0x7f;
@@ -67,19 +70,53 @@ function readScripts(root) {
 	}
 }
 
-/**
- * True when `name` is a package.json script or a node_modules/.bin entry in `root` (the
- * current directory unless given). A version suffix is ignored ("prettier@3" counts as "prettier"), and a scoped package is looked
- * up by its last segment ("@biomejs/biome" as "biome").
- */
-function hasTool(name, root = process.cwd()) {
-	if (typeof name !== "string" || name === "") return false;
-	if (typeof readScripts(root)[name] === "string") return true;
+/** Nearest ancestor-or-self holding .git (a worktree has a .git file). */
+function checkoutTop(cwd) {
+	for (let dir = cwd; ; dir = path.dirname(dir)) {
+		if (fs.existsSync(path.join(dir, ".git"))) return dir;
+		if (path.dirname(dir) === dir) return null;
+	}
+}
+
+/** `start` and its parents up to the checkout top, never above it. */
+function lookupDirs(start, cwd) {
+	const top = checkoutTop(cwd) ?? cwd;
+	const rel = path.relative(top, start);
+	if (rel === ".." || rel.startsWith(`..${path.sep}`) || path.isAbsolute(rel)) return [start];
+	const dirs = [];
+	for (let dir = start; ; dir = path.dirname(dir)) {
+		dirs.push(dir);
+		if (dir === top || path.dirname(dir) === dir) return dirs;
+	}
+}
+
+/** "prettier@3" is prettier, "@biomejs/biome" is biome, a path is "". */
+function binName(name) {
 	const bare = name.replace(/(.)@[^/]*$/, "$1");
-	const binName = bare.split("/").pop() ?? "";
-	if (binName === "") return false;
-	const binDir = path.join(root, "node_modules", ".bin");
-	return BIN_SUFFIXES.some((suffix) => fs.existsSync(path.join(binDir, binName + suffix)));
+	const scoped = /^@[^/]+\/([^/]+)$/.exec(bare);
+	if (scoped) return scoped[1];
+	return bare.includes("/") || bare === "." || bare === ".." ? "" : bare;
+}
+
+/**
+ * scope: any = a script of `dir`, else a .bin entry in `dir` or a parent; script; bin = .bin
+ * in `dir` or a parent; local = .bin in `dir` only.
+ */
+function hasTool(name, dir = ".", scope = "any", cwd = process.cwd()) {
+	if (typeof name !== "string" || name === "") return false;
+	const start = path.resolve(cwd, dir);
+	if ((scope === "any" || scope === "script") && typeof readScripts(start)[name] === "string") {
+		return true;
+	}
+	if (scope === "script") return false;
+	const bin = binName(name);
+	if (bin === "") return false;
+	const dirs = scope === "local" ? [start] : lookupDirs(start, cwd);
+	return dirs.some((d) =>
+		BIN_SUFFIXES.some((suffix) =>
+			fs.existsSync(path.join(d, "node_modules", ".bin", bin + suffix)),
+		),
+	);
 }
 
 /** PostToolUse JSON that hands `title` and the tail of `output` to Claude as context. */
@@ -94,13 +131,14 @@ function contextJson(title, output) {
 
 /** Run one subcommand; returns the exit code. */
 function main(argv) {
-	const [command, arg] = argv;
+	const [command, arg, dir, scope] = argv;
 	if (command === "path") {
 		const filePath = filePathFrom(readStdin());
 		if (filePath !== "") process.stdout.write(`${filePath}\n`);
 		return 0;
 	}
-	if (command === "has-tool") return hasTool(arg) ? 0 : 1;
+	if (command === "has-tool")
+		return hasTool(arg, dir || ".", SCOPES.has(scope) ? scope : "any") ? 0 : 1;
 	if (command === "context") {
 		process.stdout.write(`${contextJson(arg ?? "", readStdin())}\n`);
 		return 0;

@@ -41,7 +41,7 @@ bunx claude-toolkit refresh      # Regenerate only if the toolkit version change
   - `types.ts`: `ClaudeToolkitConfig`, `StackPack`, `StackName` type definitions and interfaces
   - `detect.ts`: Stack detection by scanning dependencies and config files; returns a list of detected stacks with reasons
   - `generator.ts`: Loads stack packs from `stacks/*/stack.json`, merges them with core assets, and writes `.claude/` and supporting config files (biome.json, tsconfig.json if scaffolding is enabled). Also owns the `.claude/.toolkit-version` marker (`readToolkitVersion()`, `readMarker()`), validates `git.protectedBranches` before quoting them into the branch guard, allowlists hook commands in `resolveConfig`, and merges `.claude/settings.json` (`generateSettings`)
-  - `hook-commands.ts`: The hook-command allowlist (`HOOK_COMMAND_PATTERN`, `isAllowedHookCommand`, `assertValidHookCommands`), `DEFAULT_HOOKS`, and the POSIX `sh` builders for the PostToolUse hooks and the skill-eval command; every toolkit hook command starts with a `# claude-toolkit:<id>` marker line
+  - `hook-commands.ts`: The hook-command allowlist (`HOOK_COMMAND_PATTERN`, `isAllowedHookCommand`, `assertValidHookCommands`), `DEFAULT_HOOKS`, `parseHookCommand` (which tool a bun/bunx/npm/npx/pnpm/yarn `run`/`exec`/`x` command needs and the directory it looks in; every other command is guarded on its runner only) and the POSIX `sh` builders for the PostToolUse hooks and the skill-eval command; every toolkit hook command starts with a `# claude-toolkit:<id>` marker line
   - `settings-merge.ts`: Pure merge of the toolkit's hooks and defaults into an existing `settings.json`; it owns only `# claude-toolkit:` hook entries plus the unmarked entries 0.17 and earlier wrote
   - `refresh-hint.ts`: Builds the "add a `prepare` script" hint printed by bare CLI runs (pure; per-package-manager wording, `postinstall` for Yarn 2+)
   - `utils.ts`: File I/O helpers (`readJson`, `writeFileEnsureDir`, `copyDir`, `exists`, `removePath`)
@@ -51,16 +51,15 @@ bunx claude-toolkit refresh      # Regenerate only if the toolkit version change
 
 - **`core/`** — Always-included assets (generated into `.claude/`)
   - `skills/`: Core skills (systematic-debugging, testing-patterns, typescript-conventions, verification-before-completion, code-style) — referenced by name in `generator.ts`
-  - `hooks/`: `skill-eval.cjs` (the UserPromptSubmit hook: prints one advisory line naming relevant skills), `hook-input.cjs` (fs-only helper the PostToolUse hooks call: `path`, `has-tool`, `context`) and `skill-rules.schema.json`. The PostToolUse hook commands themselves are built by `src/hook-commands.ts` and written into `settings.json`
+  - `hooks/`: `skill-eval.cjs` (the UserPromptSubmit hook: prints one advisory line naming relevant skills), `hook-input.cjs` (fs-only helper the PostToolUse hooks call: `path`, `has-tool <name> [<dir> [<scope>]]`, `context`) and `skill-rules.schema.json`. The PostToolUse hook commands themselves are built by `src/hook-commands.ts` and written into `settings.json`
   - `commands/`: CLI commands under the `ct:` namespace (code-quality, pr-review, onboard, ticket, etc.)
   - `agents/`: Agent definitions (code-reviewer, github-workflow)
 
 - **`stacks/`** — Stack-specific implementations
   - Each stack folder (e.g., `stacks/solidjs/`, `stacks/cloudflare/`) contains:
-    - `stack.json`: Metadata (name, description, file extensions, default directory mappings, hook overrides)
+    - `stack.json`: Metadata (name, description, file extensions, default directory mappings)
     - `skills/`: Stack-specific skills (e.g., SolidJS reactivity, Vite build config)
-    - `agents/`: Stack-specific agents
-    - `hooks/`: Stack-specific automation (e.g., custom test runners for Vitest)
+    - `agents/`: Stack-specific agents (optional; no stack ships any yet)
   - Each stack's `stack.json` is parsed in `generator.ts` and merged into the resolved config
 
 - **`templates/`** — Scaffold templates
@@ -86,7 +85,7 @@ bunx claude-toolkit refresh      # Regenerate only if the toolkit version change
 
 - Skill names to include in `.claude/skills/`
 - Directory → skill mappings (e.g., `src/components/` → `ct-solidjs-component-patterns`)
-- Hook overrides (e.g., a stack can override the default test runner)
+- `hookOverrides` exists on the type but the generator never applies it and no stack sets it; hooks come from the project config only
 - File extensions (descriptive since 0.18.0: the format hook matches .js/.jsx/.ts/.tsx/.mjs/.cjs/.mts/.cts regardless of stack)
 
 **Idempotent generation**: The CLI is idempotent — running it twice with the same config produces identical output. This is critical for `claude-toolkit refresh`, which runs from consumers' `prepare` scripts and must not modify committed files. Specifically:
@@ -107,10 +106,14 @@ bunx claude-toolkit refresh      # Regenerate only if the toolkit version change
 
 **Hook commands are allowlisted**: every config value placed into a hook command must pass `isAllowedHookCommand` (`src/hook-commands.ts`: the `HOOK_COMMAND_PATTERN` characters plus a first word that names a program, never `eval`/`exec`/`command`/`.`/`source`/`sh -c`) in `resolveConfig`, before anything is written, and branch names must pass `BRANCH_NAME_PATTERN`; an invalid value throws an error naming its field and value. Generated hooks are POSIX `sh`, read their input through `core/hooks/hook-input.cjs`, and always exit 0 (only the protected-branch guard blocks). Never interpolate an unvalidated value into a hook command.
 
+**The tool guard predicts what the package manager will do, so it fails open**: `toolGuard` (`src/hook-commands.ts`) skips a hook silently, so every wrong "not installed" answer looks like success. `parseHookCommand` therefore reads only the `run`/`exec`/`x` forms of bun, bunx, npm, npx, pnpm and yarn with per-manager flag tables (a value-taking flag such as `--cwd`, `--filter` or `-p` must not be read as the tool); anything it does not recognise is guarded on its runner only, so the command runs and a failure reaches Claude. `npx`, `npm exec`, `bunx` and `bun x` download a missing package: never fail open for them and never accept a PATH fallback for `npx`/`npm exec`. `has-tool` looks in the command's own directory (`--cwd`, `-C`, `--prefix`) and the directories above it up to the checkout top, never above it. The PATH fallback accepts only an absolute `command -v` answer, because `command -v` also accepts builtins (`test`) and, in dash, any existing path. Add `has-tool` arguments only at the end: an older helper in the main checkout must keep working with newer hook text. Test hooks under every shell `Bun.which` finds (`sh`, `bash`, `dash`): CI runs dash, Windows and macOS run bash, and the two disagree about `command -v`.
+
+**Comments are rare and short**: add a comment only where the code is not self-explanatory (a non-obvious reason, a tool quirk, a security constraint), in one short line where possible. Never restate a name, a type or what the next line does. This applies to tests too. The exception is configuration files (such as `templates/claude-toolkit.config.ts`): document each option there, briefly, since readers edit them without reading the code.
+
 ### Common Development Patterns
 
 1. **Adding a new stack**:
-   - Create `stacks/your-stack/` with `stack.json`, `skills/`, `hooks/`, `agents/`
+   - Create `stacks/your-stack/` with `stack.json` and `skills/` (and `agents/` if the stack needs one)
    - Add the stack name to `src/types.ts` (`StackName` type)
    - Create a stack detector in `src/detect.ts` (check for a marker file or dependency)
    - Document in README.md and `docs/stacks/`

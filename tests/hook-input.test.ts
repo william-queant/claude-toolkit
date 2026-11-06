@@ -105,6 +105,147 @@ describe("has-tool", () => {
 	});
 });
 
+describe("has-tool in a directory", () => {
+	async function repo(): Promise<string> {
+		const dir = await mkdtemp(join(tmpdir(), "ct-hasToolDir-"));
+		await mkdir(join(dir, ".git"), { recursive: true });
+		await mkdir(join(dir, "apps", "web", "src"), { recursive: true });
+		await writeFile(join(dir, "package.json"), JSON.stringify({ scripts: { rootscript: "x" } }));
+		await writeFile(
+			join(dir, "apps", "web", "package.json"),
+			JSON.stringify({ scripts: { check: "x" } }),
+		);
+		return dir;
+	}
+	const bin = async (dir: string, name: string) => {
+		await mkdir(join(dir, "node_modules", ".bin"), { recursive: true });
+		await writeFile(join(dir, "node_modules", ".bin", name), "");
+	};
+	const cleanup = (dir: string) => rm(dir, { recursive: true, force: true });
+
+	test("a script is read from the target directory, not the root", async () => {
+		const dir = await repo();
+		try {
+			expect(hasTool("check", "apps/web", "any", dir)).toBe(true);
+			expect(hasTool("check", ".", "any", dir)).toBe(false);
+			expect(hasTool("rootscript", "apps/web", "any", dir)).toBe(false);
+		} finally {
+			await cleanup(dir);
+		}
+	});
+
+	test("a bin is found in the target directory and in its parents up to the checkout top", async () => {
+		const dir = await repo();
+		try {
+			await bin(join(dir, "apps", "web"), "inpackage");
+			await bin(dir, "atroot");
+			expect(hasTool("inpackage", "apps/web", "any", dir)).toBe(true);
+			expect(hasTool("inpackage", ".", "any", dir)).toBe(false);
+			expect(hasTool("atroot", "apps/web", "any", dir)).toBe(true);
+			expect(hasTool("atroot", "apps/web/src", "bin", dir)).toBe(true);
+		} finally {
+			await cleanup(dir);
+		}
+	});
+
+	test("the walk up stops at the checkout top", async () => {
+		const outer = await mkdtemp(join(tmpdir(), "ct-hasToolOuter-"));
+		try {
+			await bin(outer, "abovetop");
+			const dir = join(outer, "project");
+			await mkdir(join(dir, ".git"), { recursive: true });
+			await mkdir(join(dir, "apps", "web"), { recursive: true });
+			expect(hasTool("abovetop", "apps/web", "any", dir)).toBe(false);
+			// A worktree's .git is a file, and still marks the top.
+			const tree = join(outer, "tree");
+			await mkdir(join(tree, "apps"), { recursive: true });
+			await writeFile(join(tree, ".git"), "gitdir: elsewhere\n");
+			expect(hasTool("abovetop", "apps", "any", tree)).toBe(false);
+		} finally {
+			await cleanup(outer);
+		}
+	});
+
+	test("a target directory outside the checkout is checked alone", async () => {
+		const outer = await mkdtemp(join(tmpdir(), "ct-hasToolOut-"));
+		try {
+			const dir = join(outer, "project");
+			await mkdir(join(dir, ".git"), { recursive: true });
+			await bin(dir, "inproject");
+			await mkdir(join(outer, "sibling"), { recursive: true });
+			expect(hasTool("inproject", "../sibling", "any", dir)).toBe(false);
+		} finally {
+			await cleanup(outer);
+		}
+	});
+
+	test("a directory whose name starts with two dots is inside the checkout", async () => {
+		const dir = await repo();
+		try {
+			await bin(dir, "tool");
+			await mkdir(join(dir, "..w", "pkg"), { recursive: true });
+			expect(hasTool("tool", "..w/pkg", "any", dir)).toBe(true);
+			expect(hasTool("tool", "../..w", "any", join(dir, "apps"))).toBe(true);
+		} finally {
+			await cleanup(dir);
+		}
+	});
+
+	test("scopes: script ignores bins, bin ignores scripts, local ignores parents", async () => {
+		const dir = await repo();
+		try {
+			await bin(dir, "atroot");
+			await bin(join(dir, "apps", "web"), "inpackage");
+			expect(hasTool("check", "apps/web", "script", dir)).toBe(true);
+			expect(hasTool("inpackage", "apps/web", "script", dir)).toBe(false);
+			expect(hasTool("check", "apps/web", "bin", dir)).toBe(false);
+			expect(hasTool("inpackage", "apps/web", "bin", dir)).toBe(true);
+			expect(hasTool("check", "apps/web", "local", dir)).toBe(false);
+			expect(hasTool("inpackage", "apps/web", "local", dir)).toBe(true);
+			expect(hasTool("atroot", "apps/web", "local", dir)).toBe(false);
+		} finally {
+			await cleanup(dir);
+		}
+	});
+
+	test("a path is not a package name, but a scope and a version are stripped", async () => {
+		const dir = await repo();
+		try {
+			await bin(dir, "web");
+			await bin(dir, "n");
+			await bin(dir, "biome");
+			expect(hasTool("apps/web", ".", "any", dir)).toBe(false);
+			expect(hasTool(".", ".", "any", dir)).toBe(false);
+			expect(hasTool("@s/n@2", ".", "any", dir)).toBe(true);
+			expect(hasTool("@biomejs/biome", ".", "any", dir)).toBe(true);
+		} finally {
+			await cleanup(dir);
+		}
+	});
+
+	test.skipIf(!node)(
+		"the CLI takes a directory and a scope; unknown scopes count as any",
+		async () => {
+			const dir = await repo();
+			try {
+				await bin(join(dir, "apps", "web"), "inpackage");
+				const run = (...args: string[]) => {
+					const r = Bun.spawnSync([node as string, HELPER, "has-tool", ...args], { cwd: dir });
+					return r.exitCode;
+				};
+				expect(run("inpackage", "apps/web")).toBe(0);
+				expect(run("inpackage", "apps/web", "bin")).toBe(0);
+				expect(run("inpackage", "apps/web", "script")).toBe(1);
+				expect(run("inpackage", "apps/web", "nonsense")).toBe(0);
+				expect(run("inpackage")).toBe(1);
+				expect(run("inpackage", "apps/web", "bin", "extra", "ignored")).toBe(0);
+			} finally {
+				await cleanup(dir);
+			}
+		},
+	);
+});
+
 describe("context", () => {
 	test("wraps the tail of the output as PostToolUse additionalContext", () => {
 		const output = Array.from({ length: 50 }, (_, i) => `line ${i + 1}`).join("\r\n");
