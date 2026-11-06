@@ -12,6 +12,7 @@ The edit hooks now check for their tool the way the package manager will look fo
 - fix(skills): `ct-verification-before-completion` no longer prescribes a bare `tsc --noEmit`, which checks no files and reports 0 errors when the root `tsconfig.json` only lists `references`.
 - docs: README documents how the tool is looked up per command, a "Monorepos and other package managers" section (forms that work, forms that never can, and what a hook run from the repo root changes for Vitest, `tsc`, Biome, Cargo and Playwright), and that the default hooks need bun on every machine. CLAUDE.md describes `parseHookCommand`, the `has-tool` arguments and the fail-open rule, and no longer claims stack hook overrides that the generator never applied.
 - test: the hook tests run under every shell found among `sh`, `bash` and `dash`. CI's `sh` is `dash`, which passed the 0.18.0 code whenever the misread word named an existing directory.
+- build(deps): TypeScript 7.0.2, Biome 2.6.6, `@types/bun` 1.4.4 and lint-staged 17.6.0; CI and publish run Bun 1.4.4. Dev tools only: nothing changes for installs.
 
 Behaviour changes to know about:
 
