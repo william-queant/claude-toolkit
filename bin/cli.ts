@@ -24,7 +24,7 @@ import { basename, join, resolve } from "node:path";
 import { detectStacks } from "../src/detect.js";
 import { generate, readMarker, readToolkitVersion } from "../src/generator.js";
 import { DEFAULT_HOOKS } from "../src/hook-commands.js";
-import { buildRefreshHint } from "../src/refresh-hint.js";
+import { buildRefreshHint, inferPackageManager, LOCKFILE_NAMES } from "../src/refresh-hint.js";
 import type { ClaudeToolkitConfig } from "../src/types.js";
 
 const CONFIG_FILENAME = "claude-toolkit.config.ts";
@@ -199,15 +199,17 @@ async function printRefreshHint(
 ): Promise<void> {
 	const pkgPath = join(projectDir, "package.json");
 	if (!existsSync(pkgPath)) return;
-	let scripts: Record<string, unknown>;
+	let pkg: { scripts?: Record<string, unknown>; packageManager?: unknown };
 	try {
-		scripts = JSON.parse(await readFile(pkgPath, "utf-8")).scripts ?? {};
+		pkg = JSON.parse(await readFile(pkgPath, "utf-8"));
 	} catch {
 		return; // an unparsable package.json is not worth failing the run over
 	}
+	// The config says "bun" on a first run whatever the project uses; name the real manager.
+	const lockfiles = LOCKFILE_NAMES.filter((name) => existsSync(join(projectDir, name)));
 	const lines = buildRefreshHint({
-		scripts,
-		packageManager,
+		scripts: pkg.scripts ?? {},
+		packageManager: inferPackageManager(pkg.packageManager, lockfiles) ?? packageManager,
 		yarnBerry: existsSync(join(projectDir, ".yarnrc.yml")),
 		previousVersion,
 	});

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import {
 	buildRefreshHint,
 	hasRefreshScript,
+	inferPackageManager,
 	isBefore,
 	type RefreshHintInput,
 } from "../src/refresh-hint.ts";
@@ -133,5 +134,30 @@ describe("buildRefreshHint", () => {
 				}
 			}
 		}
+	});
+});
+
+describe("inferPackageManager", () => {
+	test("the packageManager field wins, whatever its version suffix", () => {
+		expect(inferPackageManager("pnpm@9.1.0+sha512.abc", ["package-lock.json"])).toBe("pnpm");
+		expect(inferPackageManager("yarn@4.5.3", [])).toBe("yarn");
+		expect(inferPackageManager("bun@1.3.11", [])).toBe("bun");
+		expect(inferPackageManager("npm@10.9.3", [])).toBe("npm");
+	});
+
+	test("a single lockfile names the package manager", () => {
+		expect(inferPackageManager(undefined, ["pnpm-lock.yaml"])).toBe("pnpm");
+		expect(inferPackageManager(undefined, ["package-lock.json"])).toBe("npm");
+		expect(inferPackageManager(undefined, ["yarn.lock"])).toBe("yarn");
+		expect(inferPackageManager(undefined, ["bun.lock"])).toBe("bun");
+		expect(inferPackageManager(undefined, ["bun.lockb"])).toBe("bun");
+		expect(inferPackageManager(undefined, ["bun.lock", "bun.lockb"])).toBe("bun");
+	});
+
+	test("no evidence, an unknown manager or conflicting lockfiles leave the choice to the config", () => {
+		expect(inferPackageManager(undefined, [])).toBeNull();
+		expect(inferPackageManager("deno@2", [])).toBeNull();
+		expect(inferPackageManager(42, [])).toBeNull();
+		expect(inferPackageManager(undefined, ["pnpm-lock.yaml", "package-lock.json"])).toBeNull();
 	});
 });

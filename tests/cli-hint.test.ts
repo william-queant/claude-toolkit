@@ -15,15 +15,27 @@ interface Setup {
 	config?: boolean;
 	marker?: string;
 	yarnrc?: boolean;
+	/** Extra files to create in the project (name to content). */
+	files?: Record<string, string>;
+	/** Extra package.json fields. */
+	packageManagerField?: string;
 }
 
 /** Run the bare CLI in a temp project built from `setup`; return stdout. */
 async function bareRun(setup: Setup, ...flags: string[]): Promise<string> {
 	const dir = await mkdtemp(join(tmpdir(), "ct-hint-"));
 	try {
-		const pkg = { name: "consumer", private: true, scripts: setup.scripts ?? {} };
+		const pkg = {
+			name: "consumer",
+			private: true,
+			scripts: setup.scripts ?? {},
+			...(setup.packageManagerField ? { packageManager: setup.packageManagerField } : {}),
+		};
 		await writeFile(join(dir, "package.json"), `${JSON.stringify(pkg, null, 2)}\n`);
 		if (setup.config) await writeFile(join(dir, "claude-toolkit.config.ts"), PLAIN_CONFIG);
+		for (const [name, content] of Object.entries(setup.files ?? {})) {
+			await writeFile(join(dir, name), content);
+		}
 		if (setup.yarnrc) await writeFile(join(dir, ".yarnrc.yml"), "nodeLinker: node-modules\n");
 		if (setup.marker !== undefined) {
 			await mkdir(join(dir, ".claude"), { recursive: true });
@@ -78,4 +90,19 @@ test("a Yarn Berry project is pointed at postinstall", async () => {
 
 test("--quiet prints no hint", async () => {
 	expect(await bareRun({ config: true, marker: "0.16.0" }, "--quiet")).toBe("");
+});
+
+test("the named-script variant uses the package manager the project really uses", async () => {
+	// The first run writes packageManager "bun" to the config; the lockfile says pnpm.
+	const out = await bareRun({
+		scripts: { prepare: "husky" },
+		files: { "pnpm-lock.yaml": "lockfileVersion: 9" },
+	});
+	expect(out).toContain('"&& pnpm run claude-toolkit:refresh"');
+	expect(out).not.toContain("&& bun run");
+	const viaField = await bareRun({
+		scripts: { prepare: "husky" },
+		packageManagerField: "npm@10.9.3",
+	});
+	expect(viaField).toContain('"&& npm run claude-toolkit:refresh"');
 });

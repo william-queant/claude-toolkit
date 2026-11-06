@@ -42,6 +42,36 @@ const CAVEATS: Record<PackageManager | "yarn-berry", string | null> = {
 		'Yarn 2+ never runs "prepare" for your own project; "postinstall" runs whenever your dependencies change.',
 };
 
+/** Lockfile name to the package manager that writes it. */
+const LOCKFILES: Record<string, PackageManager> = {
+	"bun.lock": "bun",
+	"bun.lockb": "bun",
+	"pnpm-lock.yaml": "pnpm",
+	"package-lock.json": "npm",
+	"yarn.lock": "yarn",
+};
+/** Lockfile names to look for in the project directory. */
+export const LOCKFILE_NAMES = Object.keys(LOCKFILES);
+
+/**
+ * The package manager a project really uses: the `packageManager` field of its package.json,
+ * else the one lockfile present in `lockfiles`. Null when there is no evidence, the field
+ * names another tool, or lockfiles of several managers disagree: the config decides then.
+ * The first run always writes "bun" to the config, which is wrong for most projects.
+ */
+export function inferPackageManager(
+	packageManagerField: unknown,
+	lockfiles: string[],
+): PackageManager | null {
+	if (typeof packageManagerField === "string") {
+		const name = packageManagerField.split("@")[0] ?? "";
+		if (name === "bun" || name === "npm" || name === "pnpm" || name === "yarn") return name;
+		return null;
+	}
+	const found = new Set(lockfiles.map((file) => LOCKFILES[file]).filter(Boolean));
+	return found.size === 1 ? ([...found][0] ?? null) : null;
+}
+
 /** Compare x.y.z numerically. A prerelease counts as its release: 0.17.0-rc.0 is not before 0.17.0. */
 export function isBefore(version: string, floor: string): boolean {
 	const parts = (v: string) =>

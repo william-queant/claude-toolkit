@@ -175,7 +175,7 @@ The generated `.claude/settings.json` registers these hooks. Each command is pla
 | Install            | edits `package.json`                                       | `hooks.installCommand` + `hooks.autoInstall: true` | off                            |
 
 - **They never block.** The format, test, type-check, extra-check and install hooks always exit 0. When a command fails, Claude gets the last lines of its output as context next to the edit and decides what to do. The install hook also writes the last 20 lines of its output to Claude Code's debug log (`claude --debug-file <path>`).
-- **They skip missing tools and ignored files.** A hook does nothing unless its tool is installed: the word after `run`, `exec`, `x`, `npx` or `bunx` must be a `node_modules/.bin` entry, a `package.json` script or a command on the `PATH`; a command without such a prefix (e.g. `tsc --noEmit`) must itself be on the `PATH` — use `bun run tsc --noEmit`. Tools are looked up in the edited file's checkout. In a Claude Code worktree (under `.claude/worktrees/`), Claude Code reads the worktree's own `.claude/`. With `.claude/` gitignored, a fresh worktree has none, so the toolkit's hooks, skills, commands and permission rules only apply there after you install dependencies in the worktree. That install provides the tools the hooks look for, and the `prepare` line then runs `claude-toolkit refresh` to generate the worktree's `.claude/`. The default formatter stays silent until Biome is installed. Files that git ignores (build output, dependencies) are skipped too. If your `biome.json` excludes files with `files.includes`, add `--no-errors-on-unmatched` to the formatter so edits to excluded files are not reported as failures.
+- **They skip missing tools and ignored files.** A hook does nothing, and prints nothing, unless its command can run: its first word must be on Claude Code's `PATH` (the defaults need `bun`), and a `bun`, `bunx`, `npm`, `npx`, `pnpm` or `yarn` command must find its tool where that command looks for it, as [Monorepos and other package managers](#monorepos-and-other-package-managers) spells out. A bare command (e.g. `tsc --noEmit`) is looked up on the `PATH` only — use `bun run tsc --noEmit`. The lookup starts in the edited file's checkout. In a Claude Code worktree (under `.claude/worktrees/`), Claude Code reads the worktree's own `.claude/`. With `.claude/` gitignored, a fresh worktree has none, so the toolkit's hooks, skills, commands and permission rules only apply there after you install dependencies in the worktree. That install provides the tools the hooks look for, and the `prepare` line then runs `claude-toolkit refresh` to generate the worktree's `.claude/`. The default formatter stays silent until Biome is installed. Files that git ignores (build output, dependencies) are skipped too. If your `biome.json` excludes files with `files.includes`, add `--no-errors-on-unmatched` to the formatter so edits to excluded files are not reported as failures.
 - **Commands are allowlisted.** A hook command may only contain letters, digits, spaces and `. _ / @ : = + -`, and must start with the program to run (not `eval`, `exec`, `command`, `.`, `source`, a shell with `-c`, or an option). Anything else — quotes, `$`, `;`, `|`, `&&`, redirects, newlines — stops `bunx claude-toolkit` and `claude-toolkit refresh` with an error naming the field and the value. Put such a command in a `package.json` script and reference the script:
 
   ```json
@@ -187,6 +187,56 @@ The generated `.claude/settings.json` registers these hooks. Each command is pla
   ```
 
 - **`settings.json` is merged, not overwritten.** The toolkit owns only hook entries whose command starts with `# claude-toolkit:` (and the unmarked entries that 0.17 and earlier wrote), and it sets `includeCoAuthoredBy` and its `env` defaults only when they are missing. Your `permissions` (including `deny` rules), your own hooks, `model` and every other key survive regeneration. A `settings.json` that is not a JSON object is saved as `settings.json.bak` before a new one is written.
+
+### Monorepos and other package managers
+
+Every hook runs from the root of the edited file's checkout, and the format and test commands get the edited file's path appended. A `bun`, `bunx`, `npm`, `npx`, `pnpm` or `yarn` command is checked for its tool before it runs, where that command would look for it:
+
+| Command                                                          | The tool must be…                                                                          |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| `bun run <tool>`                                                 | a `package.json` script, a `node_modules/.bin` entry, or a command on the `PATH`          |
+| `bun x <tool>`, `bunx <tool>`, `pnpm exec <tool>`, `yarn exec <tool>` | a `node_modules/.bin` entry, or a command on the `PATH`                               |
+| `npm run <script>`, `pnpm run <script>`                          | a `package.json` script                                                                    |
+| `npx <tool>`, `npm exec <tool>`                                  | a `node_modules/.bin` entry. A tool installed only globally is skipped: `npx` would download a missing package, so add the tool as a devDependency |
+| `yarn run <tool>`                                                | a script or a `node_modules/.bin` entry                                                    |
+
+Yarn Plug'n'Play has no `node_modules`, so a `yarn run` or `yarn exec` check is satisfied by the presence of `.pnp.cjs`. Scripts are read from the directory the command runs in; `.bin` entries are looked up there and in the directories above it, up to the checkout root. `--cwd` (bun, Yarn), `-C` or `--dir` (pnpm) and `--prefix` or `-C` (npm) move the command to another directory, and the lookup follows. In a pnpm workspace, and in a new Bun 1.3 workspace, a package's dev tools live in the package's own `node_modules/.bin`, not the root's, so target the package:
+
+```ts
+hooks: {
+  testRunner: "bun run --cwd apps/web vitest run",
+  formatter: "pnpm -C apps/web exec biome format --write",
+  typeCheck: "npm --prefix apps/web run typecheck",
+},
+```
+
+Any other command runs with only its first word checked: `cargo check`, `turbo run test`, `nx run web:test`, and the forms that select workspaces (`--filter`, `-F`, `-w`, `--workspace`, `pnpm -r`, `yarn workspace`). Such a hook runs and reports failures to Claude instead of skipping. It still waits until the checkout has a `node_modules` folder (or Plug'n'Play), so a fresh worktree stays quiet. A file after `bun run` (`bun run check.ts`, `bun run scripts/fmt.mjs`) is run the same way. `npx`, `npm exec`, `bunx` and `bun x` are the exception, because they download a missing package: with a flag the toolkit does not know, the hook checks the first word after the flags and skips when that is not an installed tool, and with no tool word at all it never runs.
+
+To run a package's tests for every test file in the repo, point the hook at a script in the root `package.json`, called with your package manager. `--passWithNoTests` keeps edits to other packages' tests quiet:
+
+```json
+{ "scripts": { "test:file": "bun run --cwd apps/web vitest run --passWithNoTests" } }
+```
+
+```ts
+hooks: { testRunner: "bun run test:file" },
+```
+
+Forms that do not work, whatever the toolkit does:
+
+- `bun --cwd apps/web run …` prints bun's usage and exits 0 without running anything. Put the flag after `run`.
+- `bun run --filter web vitest run` fails: bun's `--filter` runs scripts only, so use `bun run --filter web test`.
+- `pnpm -C apps/web vitest run` and `pnpm --filter web vitest run` need `exec` (`pnpm -C apps/web exec vitest run`).
+- A script that does `cd apps/web && vitest run` fails where the tool is installed only in the package.
+
+Running from the root also changes what the tools see:
+
+- **Vitest** ignores a package's `vitest.config.ts` when run from the root, so passing tests can be reported as failures. Target the package as above, or define `test.projects` at the root.
+- **`tsc --noEmit`** checks nothing, and exits 0, when the root `tsconfig.json` only lists `references` (most Vite templates). Use `tsc -b --noEmit` and gitignore the `.tsbuildinfo` files it writes.
+- **Biome** reads the nearest `biome.json`; a nested one needs `"root": false` or every file under it fails.
+- **Cargo** looks for `Cargo.toml` at the root: use `cargo check --manifest-path worker/Cargo.toml` when the crate is in a subfolder.
+- **Playwright** `*.spec.ts` files match the test hook, which runs the test command on them. Keep the test command away from them or exclude them in its config.
+- **Machines without bun** skip every default hook, and cannot run `bunx claude-toolkit`. Everything that must work for the whole team needs bun, or hook commands written for your package manager.
 
 ## Project Setup
 

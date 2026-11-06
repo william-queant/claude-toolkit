@@ -12,7 +12,7 @@ description: Evidence-based completion claims -- never say "done" without proof 
 Before claiming complete, run and show output for each:
 
 1. **Tests pass** -- Full suite or related tests. Show actual output, not just "tests pass".
-2. **Types check** -- `tsc --noEmit` with zero errors on changed files.
+2. **Types check** -- The project's type-check script (or `tsc --noEmit`) with zero errors on changed files. When the root `tsconfig` only lists `references`, use `tsc -b` or the script: a plain `tsc --noEmit` there checks nothing and reports 0 errors.
 3. **Lint passes** -- Fix violations introduced by your changes.
 4. **Feature works** -- Show actual output (API response, CLI output, screenshot) for user-facing changes.
 
@@ -45,7 +45,7 @@ Before completing work that touches dependencies, inputs, or external data:
 ```
 ## Completed: [task name]
 - Tests: X passing (Y new, Z existing) -- [command output]
-- Types: tsc --noEmit: 0 errors
+- Types: [type-check command]: 0 errors
 - Lint: 0 violations
 - Security: audit clean, no exposed secrets
 - Manual: [endpoint/action]: [status/result]
