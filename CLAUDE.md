@@ -108,6 +108,8 @@ bunx claude-toolkit refresh      # Regenerate only if the toolkit version change
 
 **The tool guard predicts what the package manager will do, so it fails open**: `toolGuard` (`src/hook-commands.ts`) skips a hook silently, so every wrong "not installed" answer looks like success. `parseHookCommand` therefore reads only the `run`/`exec`/`x` forms of bun, bunx, npm, npx, pnpm and yarn with per-manager flag tables (a value-taking flag such as `--cwd`, `--filter` or `-p` must not be read as the tool); anything it does not recognise is guarded on its runner only, so the command runs and a failure reaches Claude. `npx`, `npm exec`, `bunx` and `bun x` download a missing package: never fail open for them and never accept a PATH fallback for `npx`/`npm exec`. `has-tool` looks in the command's own directory (`--cwd`, `-C`, `--prefix`) and the directories above it up to the checkout top, never above it. The PATH fallback accepts only an absolute `command -v` answer, because `command -v` also accepts builtins (`test`) and, in dash, any existing path. Add `has-tool` arguments only at the end: an older helper in the main checkout must keep working with newer hook text. Test hooks under every shell `Bun.which` finds (`sh`, `bash`, `dash`): CI runs dash, Windows and macOS run bash, and the two disagree about `command -v`.
 
+**Comments are rare and short**: add a comment only where the code is not self-explanatory (a non-obvious reason, a tool quirk, a security constraint), in one short line where possible. Never restate a name, a type or what the next line does. This applies to tests too.
+
 ### Common Development Patterns
 
 1. **Adding a new stack**:

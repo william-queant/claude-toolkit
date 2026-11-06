@@ -70,7 +70,7 @@ function readScripts(root) {
 	}
 }
 
-/** Nearest ancestor-or-self of `cwd` holding .git (a directory, or the file a worktree has); null if none. */
+/** Nearest ancestor-or-self holding .git (a worktree has a .git file). */
 function checkoutTop(cwd) {
 	for (let dir = cwd; ; dir = path.dirname(dir)) {
 		if (fs.existsSync(path.join(dir, ".git"))) return dir;
@@ -78,11 +78,7 @@ function checkoutTop(cwd) {
 	}
 }
 
-/**
- * `start` and its parents up to the checkout top, which is where bun, npm and pnpm look
- * for a .bin entry. A `start` outside the checkout is looked at alone: never above the top,
- * where an unrelated node_modules may sit.
- */
+/** `start` and its parents up to the checkout top, never above it. */
 function lookupDirs(start, cwd) {
 	const top = checkoutTop(cwd) ?? cwd;
 	const rel = path.relative(top, start);
@@ -94,10 +90,7 @@ function lookupDirs(start, cwd) {
 	}
 }
 
-/**
- * The .bin entry a name refers to: "prettier@3" is "prettier", "@biomejs/biome" is "biome",
- * and a path ("apps/web") is no package name at all.
- */
+/** "prettier@3" is prettier, "@biomejs/biome" is biome, a path is "". */
 function binName(name) {
 	const bare = name.replace(/(.)@[^/]*$/, "$1");
 	const scoped = /^@[^/]+\/([^/]+)$/.exec(bare);
@@ -106,12 +99,8 @@ function binName(name) {
 }
 
 /**
- * True when `name` is something a command run in `dir` (relative to `cwd`, the current
- * directory unless given) can find. `scope` says where it looks:
- *   any     a package.json script of `dir`, else a .bin entry in `dir` or a parent
- *   script  a package.json script of `dir`
- *   bin     a .bin entry in `dir` or a parent, up to the checkout top
- *   local   a .bin entry in `dir` only
+ * scope: any = a script of `dir`, else a .bin entry in `dir` or a parent; script; bin = .bin
+ * in `dir` or a parent; local = .bin in `dir` only.
  */
 function hasTool(name, dir = ".", scope = "any", cwd = process.cwd()) {
 	if (typeof name !== "string" || name === "") return false;

@@ -1,6 +1,4 @@
-// Draft regression test for the reported bug: run the generated test hook under every
-// available POSIX shell. CI's sh is dash, which passes the 0.18.0 guard by accident when
-// the misread word is an existing directory, so bash must run too.
+// CI's sh is dash, which passed the 0.18.0 guard by accident: run every available shell.
 import { describe, expect, test } from "bun:test";
 import { existsSync } from "node:fs";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
@@ -24,7 +22,7 @@ const CHECK = [
 	'if (file.includes("bad")) { console.log("boom: 1 failing test"); process.exit(1); }',
 ].join("\n");
 
-/** A bun workspace whose apps/web package has a "check" script (absent when installed is false). */
+/** A bun workspace; apps/web has a "check" script unless `installed` is false. */
 async function monorepo(dir: string, testRunner: string, installed = true): Promise<string> {
 	expect(Bun.spawnSync([git as string, "init", "-q"], { cwd: dir, env }).exitCode).toBe(0);
 	await writeFile(
@@ -110,7 +108,7 @@ const OK = (dir: string) => join(dir, "apps", "web", "src", "a.test.ts");
 const SILENT = { exitCode: 0, stdout: "" };
 
 describe.skipIf(!canRun).each(SHELLS)("the tool guard under %s", (_name, shell) => {
-	/** Run only the hook's guard lines, then print "reached": shows whether the guard let the command through. */
+	/** True when the hook's guard lines let the command through. */
 	function guardPasses(dir: string, hook: string, file: string): boolean {
 		const lines = hook.split("\n");
 		const last = lines.findLastIndex(
@@ -156,7 +154,7 @@ describe.skipIf(!canRun).each(SHELLS)("the tool guard under %s", (_name, shell) 
 		});
 	});
 
-	// Bun looks for .exe and .bunx shims on Windows; a plain script stands in for a bin elsewhere.
+	// Bun needs .exe or .bunx shims on Windows.
 	test.skipIf(process.platform === "win32")(
 		"a bin that exists only in the package is found there",
 		async () => {

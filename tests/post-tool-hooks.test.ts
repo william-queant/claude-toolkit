@@ -12,7 +12,7 @@ const found = Bun.which("sh");
 const sh = found && !/system32/i.test(found) ? found : null;
 const git = Bun.which("git");
 const canRunHooks = Boolean(sh && git && Bun.which("node") && Bun.which("bun"));
-// Debian and Ubuntu run hooks with dash and macOS and Git Bash with bash: check the syntax under each.
+// Debian and Ubuntu run hooks with dash; macOS and Git Bash with bash.
 const SHELLS = ["sh", "bash", "dash"]
 	.map((name) => [name, Bun.which(name)] as const)
 	.filter(
@@ -85,7 +85,6 @@ describe("commandTools", () => {
 	});
 });
 
-/** A tool check as parseHookCommand reports it. */
 const check = (tool: string, dir: string, scope: Scope, path: boolean, pnp = false) => ({
 	tool,
 	dir,
@@ -96,7 +95,6 @@ const check = (tool: string, dir: string, scope: Scope, path: boolean, pnp = fal
 
 describe("parseHookCommand", () => {
 	test.each([
-		// The reported command: the value of --cwd is a directory, not the tool.
 		["bun run --cwd apps/web vitest run", check("vitest", "apps/web", "any", true)],
 		["bun run --cwd=apps/web vitest run", check("vitest", "apps/web", "any", true)],
 		["bun --cwd=apps/web run vitest run", check("vitest", "apps/web", "any", true)],
@@ -120,7 +118,6 @@ describe("parseHookCommand", () => {
 		["pnpm run vitest run", check("vitest", ".", "script", false)],
 		["yarn --cwd apps/web run vitest run", check("vitest", "apps/web", "any", false, true)],
 		["yarn exec vitest run", check("vitest", ".", "bin", true, true)],
-		// Value-taking flags that are in the tables: their value is not the tool.
 		["npx --registry https://r.example vitest", check("vitest", ".", "bin", false)],
 		["npx --cache /tmp/c vitest run", check("vitest", ".", "bin", false)],
 		["npx --cache x vitest", check("vitest", ".", "bin", false)],
@@ -132,7 +129,6 @@ describe("parseHookCommand", () => {
 	});
 
 	test.each([
-		// A workspace selector or an unknown flag: the runner alone is guarded and the hook reports failures.
 		"bun run --filter web test",
 		"bun run -F web test",
 		"pnpm --filter web exec vitest run",
@@ -140,13 +136,11 @@ describe("parseHookCommand", () => {
 		"npm run test --workspace web",
 		"yarn workspace web run vitest run",
 		"bun run --some-new-flag vitest run",
-		// bun's --cwd before the subcommand prints usage and runs nothing: not understood.
+		// bun prints usage and runs nothing.
 		"bun --cwd apps/web run vitest run",
-		// A file target, not a tool, with or without a directory.
 		"bun run scripts/fmt.mjs",
 		"bun run check.ts",
 		"bun run build.mjs",
-		// Subcommands of other programs are not the package manager's run/exec.
 		"bun turbo run typecheck",
 		"pnpm turbo run typecheck",
 		"pnpm nx run web:typecheck",
@@ -165,9 +159,6 @@ describe("parseHookCommand", () => {
 	});
 
 	test.each([
-		// An unrecognised flag may hide the real tool word. These runners download a missing
-		// package, so such a command is either checked (and skipped when the misread word is no
-		// installed tool) or blocked outright: it never runs unchecked.
 		"npx --unknown-flag https://r.example vitest",
 		"bun x --cwd apps/web vitest",
 		"bunx --cwd apps/web vitest",
@@ -303,7 +294,7 @@ describe("generated PostToolUse hooks", () => {
 				"test",
 			);
 			expect(unguarded).toContain(skip);
-			// A checked command, a non-JS runner and the install hook (which must run in a fresh checkout) do not.
+			// The install hook must run in a fresh checkout.
 			const checked = (await postToolUse(dir, { testRunner: "bun run vitest run" })).get("test");
 			expect(checked).not.toContain(skip);
 			const cargo = (await postToolUse(dir, { extraChecks: ["cargo check"] })).get("extra-0");

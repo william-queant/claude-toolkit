@@ -205,7 +205,7 @@ async function printRefreshHint(
 	} catch {
 		return; // an unparsable package.json is not worth failing the run over
 	}
-	// The config says "bun" on a first run whatever the project uses; name the real manager.
+	// A first run writes "bun" to the config whatever the project uses.
 	const lockfiles = LOCKFILE_NAMES.filter((name) => existsSync(join(projectDir, name)));
 	const lines = buildRefreshHint({
 		scripts: pkg.scripts ?? {},

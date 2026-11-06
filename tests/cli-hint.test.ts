@@ -15,9 +15,7 @@ interface Setup {
 	config?: boolean;
 	marker?: string;
 	yarnrc?: boolean;
-	/** Extra files to create in the project (name to content). */
 	files?: Record<string, string>;
-	/** Extra package.json fields. */
 	packageManagerField?: string;
 }
 

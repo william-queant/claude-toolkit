@@ -106,7 +106,6 @@ describe("has-tool", () => {
 });
 
 describe("has-tool in a directory", () => {
-	/** A repo (its .git marks the checkout top) with a root, apps/web and apps/web/src. */
 	async function repo(): Promise<string> {
 		const dir = await mkdtemp(join(tmpdir(), "ct-hasToolDir-"));
 		await mkdir(join(dir, ".git"), { recursive: true });
@@ -142,7 +141,6 @@ describe("has-tool in a directory", () => {
 			await bin(dir, "atroot");
 			expect(hasTool("inpackage", "apps/web", "any", dir)).toBe(true);
 			expect(hasTool("inpackage", ".", "any", dir)).toBe(false);
-			// bun, npm and pnpm all walk up from the directory the command runs in.
 			expect(hasTool("atroot", "apps/web", "any", dir)).toBe(true);
 			expect(hasTool("atroot", "apps/web/src", "bin", dir)).toBe(true);
 		} finally {

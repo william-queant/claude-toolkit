@@ -120,43 +120,34 @@ const TYPECHECK_PATTERNS = ["*.ts", "*.tsx", "*.mts", "*.cts"];
 const EXTRA_CHECK_PATTERNS = ["*.rs"];
 const INSTALL_PATTERNS = ["package.json", "*/package.json"];
 
-/** Where `has-tool` looks for a tool; see core/hooks/hook-input.cjs. */
 export type Scope = "any" | "script" | "bin" | "local";
 
-/** The tool a package-manager command needs, and where its runner looks for it. */
 export interface ToolCheck {
 	tool: string;
-	/** Directory the command runs in, relative to the checkout root. */
+	/** Relative to the checkout root. */
 	dir: string;
-	/** `script`: package.json scripts only. `bin`: .bin entries here and in parent directories. `local`: .bin here only. */
 	scope: Scope;
-	/** The tool may also be an executable on the PATH. */
+	/** Also accept an executable on the PATH. */
 	path: boolean;
-	/** Yarn Plug'n'Play has no node_modules/.bin: a .pnp.cjs satisfies the check. */
+	/** Yarn Plug'n'Play has no .bin: a .pnp.cjs satisfies the check. */
 	pnp: boolean;
 }
 
-/** `check` is null when only the runner is guarded: the command runs and a failure reaches Claude. */
+/** A null `check` guards the runner only: the command runs and failures reach Claude. */
 export interface ParsedCommand {
 	runner: string;
 	check: ToolCheck | null;
-	/** The tool cannot be identified and the runner would download a missing package: never run. */
+	/** Never run: the tool is unknown and the runner would download it. */
 	blocked?: boolean;
 }
 
-/** The flags of one package manager that change how its command is read. */
 interface Flags {
-	/** Take a value and set the directory the command runs in. */
 	dir?: string[];
-	/** True when that directory is the only place the runner looks (npm's `--prefix`). */
+	/** The directory is the only place the runner looks (npm's `--prefix`). */
 	localDir?: boolean;
-	/** Take a value and select workspaces. */
 	workspace?: string[];
-	/** Select workspaces without a value. */
 	workspaceBool?: string[];
-	/** Take a value and change nothing else. */
 	values?: string[];
-	/** Take no value. */
 	booleans?: string[];
 }
 
@@ -170,8 +161,7 @@ const flagTable = (f: Flags) => ({
 });
 type FlagTable = ReturnType<typeof flagTable>;
 
-// Flag tables checked against bun 1.3, npm 10 and 11, pnpm 8 to 12 and Yarn 1 and 4. A flag
-// that is in no table makes the command run without a tool check, never with a wrong one.
+// Checked against bun 1.3, npm 10-11, pnpm 8-12, Yarn 1 and 4. An unlisted flag means no tool check.
 const BUN = flagTable({
 	dir: ["--cwd"],
 	workspace: ["--filter", "-F"],
@@ -245,10 +235,9 @@ const YARN = flagTable({
 	booleans: ["--silent", "-s", "-T", "--top-level", "-B", "--binaries-only"],
 });
 
-/** What the flags before the tool word said. */
 interface FlagState {
 	dir: string | null;
-	/** `--cwd DIR` with a space: bun prints usage and runs nothing when it comes before `run`. */
+	/** Before bun's `run`, `--cwd DIR` prints usage and runs nothing. */
 	spaceDir: boolean;
 	localDir: boolean;
 	workspace: boolean;
@@ -262,7 +251,7 @@ const freshState = (): FlagState => ({
 	unknown: false,
 });
 
-/** Read flags from words[start]; return the index of the first word that is not a flag (or of `--`). */
+/** Returns the index of the first non-flag word (or of `--`). */
 function readFlags(words: string[], start: number, table: FlagTable, state: FlagState): number {
 	let i = start;
 	while (i < words.length) {
@@ -298,16 +287,14 @@ function readFlags(words: string[], start: number, table: FlagTable, state: Flag
 }
 
 const unversioned = (word: string) => word.replace(/(.)@[^/]*$/, "$1");
-/** A word with a "/" that is not `@scope/name` names a file, not a tool. */
 const isFileTarget = (word: string) =>
 	(word.includes("/") && !/^@[^/]+\/[^/]+$/.test(unversioned(word))) ||
 	/\.[cm]?[jt]sx?$/.test(word);
 
-/** How a subcommand resolves its tool word. */
 interface Resolution {
 	scope: Scope;
 	path: boolean;
-	/** The runner downloads a missing package (npx, npm exec, bunx, bun x): never guess its tool. */
+	/** npx, npm exec, bunx and bun x fetch missing packages. */
 	downloads: boolean;
 	pnp?: boolean;
 }
@@ -322,11 +309,7 @@ function checkTool(
 	const tool = words[words[from] === "--" ? from + 1 : from];
 	const dir = state.dir ?? ".";
 	if (how.downloads) {
-		// An unrecognised flag or a workspace selector must not turn into "run it anyway":
-		// that could download and execute a registry package. The first word is checked
-		// here and in the directories above, which these runners also search. When an
-		// unrecognised flag took a value, that value is checked instead of the tool; it is
-		// not an installed tool, so the hook skips. A file target gets no exemption either.
+		// Never run unchecked: an unknown flag's value is checked as the tool, fails, and the hook skips.
 		if (tool === undefined || tool.startsWith("-")) return { runner, check: null, blocked: true };
 		const scope = state.localDir && state.dir !== null ? "local" : "bin";
 		return { runner, check: { tool, dir, scope, path: how.path, pnp: false } };
@@ -344,7 +327,7 @@ function parseBun(runner: string, words: string[]): ParsedCommand {
 	const at = readFlags(words, 0, BUN, state);
 	const sub = words[at];
 	if ((sub === "run" || sub === "x") && state.spaceDir) {
-		return { runner, check: null }; // bun --cwd DIR run: usage text, exit 0, nothing runs
+		return { runner, check: null }; // bun prints usage and runs nothing
 	}
 	if (sub === "run") {
 		const from = readFlags(words, at + 1, BUN, state);
@@ -447,15 +430,11 @@ const PARSERS: Record<string, (runner: string, words: string[]) => ParsedCommand
 	yarn: parseYarn,
 };
 
-/** Package managers whose commands need `node_modules` (or Plug'n'Play) to do anything. */
 const JS_RUNNERS = new Set(Object.keys(PARSERS));
 
 /**
- * The runner of an allowlisted command (its first word after any VAR=value assignments, as
- * isAllowedHookCommand reads it) and, for bun, bunx, npm, npx, pnpm and Yarn `run`/`exec`/`x`
- * commands, the tool they run and where they look for it. Every other command, and every
- * form this does not understand, is guarded on its runner only: the command runs, and a
- * failure reaches Claude. Guessing wrong would skip a working hook with no trace.
+ * Unrecognised forms are guarded on their runner only: a failure then reaches Claude, while a
+ * wrong guess would skip a working hook with no trace.
  */
 export function parseHookCommand(command: string): ParsedCommand {
 	const words = command.trim().split(/\s+/);
@@ -465,27 +444,21 @@ export function parseHookCommand(command: string): ParsedCommand {
 	return parse ? parse(runner, words.slice(at + 1)) : { runner, check: null };
 }
 
-/** The runner and tool of `command`; the tool is the runner itself when no tool check applies. */
 export function commandTools(command: string): { runner: string; tool: string } {
 	const { runner, check } = parseHookCommand(command);
 	return { runner, tool: check?.tool ?? runner };
 }
 
-/** An executable on the PATH: `command -v` also accepts builtins, and in dash any existing path. */
+// `command -v` also accepts builtins and, in dash, any existing path.
 const ON_PATH = (tool: string) =>
 	`{ found="$(command -v ${tool} 2>/dev/null)" && case "$found" in /*) ;; *) false;; esac; }`;
 
-/** The checkout (or the checkout it is a worktree of) has dependencies installed. */
 const DEPENDENCIES_LINE =
 	'[ -d node_modules ] || [ -d "$top/node_modules" ] || [ -f .pnp.cjs ] || [ -f "$top/.pnp.cjs" ] || exit 0';
 
 /**
- * sh lines that exit 0 silently unless the command can run: its runner is on the PATH and
- * its tool is where the runner will look. Everything interpolated is a word of an
- * allowlisted command (HOOK_COMMAND_PATTERN): no shell syntax.
- * `needsDependencies` (edit hooks; never the install hook, which must run in a fresh
- * checkout) also skips a JS command that has no tool check in a checkout with no
- * node_modules at all.
+ * sh lines that exit 0 unless the command can run. Interpolated words come from an allowlisted
+ * command (HOOK_COMMAND_PATTERN). Not `needsDependencies` for install: it runs in fresh checkouts.
  */
 function toolGuard(command: string, needsDependencies = false): string[] {
 	const { runner, check, blocked } = parseHookCommand(command);
@@ -500,7 +473,6 @@ function toolGuard(command: string, needsDependencies = false): string[] {
 	if (check.scope !== "any") args.push(check.scope);
 	const found = [`${HOOK_INPUT} has-tool ${args.join(" ")}`];
 	if (check.pnp) found.unshift("[ -f .pnp.cjs ]", "[ -f .pnp.js ]");
-	// A scoped package (@biomejs/biome) is not a command name; only its .bin entry can be looked up.
 	if (check.path && !check.tool.includes("/")) found.push(ON_PATH(check.tool));
 	lines.push(`${found.join(" || ")} || exit 0`);
 	return lines;
