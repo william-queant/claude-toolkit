@@ -36,7 +36,7 @@ test("publish.yml can be re-run by hand and pins bun", async () => {
 	const { wf } = await workflow("publish.yml");
 	expect(Object.keys(wf.on)).toEqual(["release", "workflow_dispatch"]);
 	const setupBun = wf.jobs.publish?.steps.find((s) => s.uses?.startsWith("oven-sh/setup-bun"));
-	expect(setupBun?.with?.["bun-version"]).toBe("1.3.11");
+	expect(setupBun?.with?.["bun-version"]).toBe("1.4.4");
 });
 
 test("publish.yml checks, strips prepare, guards and smoke-tests before publishing", async () => {

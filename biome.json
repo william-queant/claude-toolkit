@@ -1,6 +1,11 @@
 {
-	"$schema": "https://biomejs.dev/schemas/2.4.10/schema.json",
+	"$schema": "https://biomejs.dev/schemas/2.6.6/schema.json",
 	"extends": ["./templates/configs/biome.base.json"],
+	"markdown": {
+		"formatter": {
+			"enabled": false
+		}
+	},
 	"linter": {
 		"rules": {
 			"suspicious": {

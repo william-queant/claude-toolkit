@@ -40,7 +40,7 @@ test("prepare uses the husky 9 binary, never npx", () => {
 });
 
 test("@types/bun is pinned to a caret range, not latest", () => {
-	expect(pkg.devDependencies["@types/bun"]).toBe("^1.3.11");
+	expect(pkg.devDependencies["@types/bun"]).toBe("^1.4.4");
 });
 
 test("bin paths have no leading ./ (npm >= 11.10 drops such entries at publish)", () => {
