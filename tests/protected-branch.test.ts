@@ -78,24 +78,20 @@ test("an empty protectedBranches list generates no guard", async () => {
 	expect(settings.hooks.PreToolUse).toBeUndefined();
 });
 
-test.each([
-	["main; rm -rf ~"],
-	["$(whoami)"],
-	["it's"],
-	["-main"],
-	["a\nb"],
-	[""],
-])("an invalid branch name %p is rejected by name", async (name) => {
-	const dir = await mkdtemp(join(tmpdir(), "ct-branch-bad-"));
-	try {
-		await expect(
-			generate(
-				dir,
-				{ stacks: [], packageManager: "bun", git: { protectedBranches: ["main", name] } },
-				{ quiet: true, scaffold: false },
-			),
-		).rejects.toThrow(`Invalid branch name in git.protectedBranches: ${JSON.stringify(name)}`);
-	} finally {
-		await rm(dir, { recursive: true, force: true });
-	}
-});
+test.each([["main; rm -rf ~"], ["$(whoami)"], ["it's"], ["-main"], ["a\nb"], [""]])(
+	"an invalid branch name %p is rejected by name",
+	async (name) => {
+		const dir = await mkdtemp(join(tmpdir(), "ct-branch-bad-"));
+		try {
+			await expect(
+				generate(
+					dir,
+					{ stacks: [], packageManager: "bun", git: { protectedBranches: ["main", name] } },
+					{ quiet: true, scaffold: false },
+				),
+			).rejects.toThrow(`Invalid branch name in git.protectedBranches: ${JSON.stringify(name)}`);
+		} finally {
+			await rm(dir, { recursive: true, force: true });
+		}
+	},
+);
